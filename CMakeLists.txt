@@ -11,7 +11,7 @@ set(LIBS glfw3)
 
 add_library(GLAD "include/glad/glad.c")
 
-add_executable(${PROJECT_NAME} src/shader.h src/main.cpp include/glad/glad.c)
+add_executable(${PROJECT_NAME} src/shader.h src/main.cpp src/window.h src/window.cpp include/glad/glad.c)
 set(LIBS GLAD)
 set(LIBS glm)
 set(LIBS stb_image)
