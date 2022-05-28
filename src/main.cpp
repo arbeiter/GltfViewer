@@ -1,14 +1,10 @@
-#include <glad/glad.h>
-#include <GLFW/glfw3.h>
-#include <src/shader.h>
-#include <iostream>
-#include <src/window.h>
-#define STB_IMAGE_IMPLEMENTATION
-#include <stb_image.h>
-#include <ostream>
+#include <glad/gl.h>
 #include <glm/glm.hpp>
-#include <glm/gtc/matrix_transform.hpp>
-#include <glm/gtc/type_ptr.hpp>
+#include <GLFW/glfw3.h>
+#include <shader.h>
+#include <iostream>
+#include <window.h>
+#include <ostream>
 #include <vector>
 
 void displayLoop(Window &window) {
@@ -38,7 +34,7 @@ int main()
     Window window = Window(800, 600, "TinyGLTF basic example");
     glfwMakeContextCurrent(window.window);
 
-    if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
+    if(!gladLoadGL((GLADloadfunc) glfwGetProcAddress))
     {
         std::cout << "Failed to initialize GLAD" << std::endl;
         return -1;

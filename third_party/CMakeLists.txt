@@ -1,7 +1,11 @@
 add_library(stb_image INTERFACE)
+add_library(stb_image_write INTERFACE)
 add_library(glm INTERFACE)
 add_library(tiny_gltf INTERFACE)
+add_library(json INTERFACE)
 
 target_include_directories(glm INTERFACE glm)
+target_include_directories(json INTERFACE json)
 target_include_directories(stb_image INTERFACE stb_image)
+target_include_directories(stb_image_write INTERFACE stb_image_write)
 target_include_directories(tiny_gltf INTERFACE tiny_gltf)
