@@ -6,6 +6,7 @@
 #include <window.h>
 #include <ostream>
 #include <vector>
+#include "gltfscene.h"
 
 void displayLoop(Window &window) {
     glEnable(GL_DEPTH_TEST);
