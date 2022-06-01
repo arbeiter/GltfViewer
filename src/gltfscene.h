@@ -5,7 +5,7 @@
 class Scene
 {
   public:
-      Scene();
       bool load(tinygltf::Model &model, const char* filename);
       void loadAndDrawTriangle();
+      void dbgModel(tinygltf::Model &model);
 };

@@ -9,19 +9,23 @@
 #include "gltfscene.h"
 
 void displayLoop(Window &window) {
+    Shader ourShader("shader.vert", "shader.frag"); // you can name your shader files however you like
+    ourShader.use(); // don't forget to activate/use the shader before setting uniforms!
+
+    Scene scene;
     glEnable(GL_DEPTH_TEST);
     glDepthFunc(GL_LESS);
-
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     glEnable(GL_BLEND);
+
     while (!glfwWindowShouldClose(window.window))
     {
-        glfwPollEvents();
         glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         glEnable(GL_DEPTH_TEST);
-        glFlush();
+        scene.loadAndDrawTriangle();
         glfwSwapBuffers(window.window);
+        glfwPollEvents();
     }
 }
 

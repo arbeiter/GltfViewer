@@ -3,7 +3,6 @@
 #define BUFFER_OFFSET(i) ((char *)NULL + (i))
 
 bool Scene::load(tinygltf::Model &model, const char *filename) {
-
   tinygltf::TinyGLTF loader;
   std::string err;
   std::string warn;
@@ -13,10 +12,51 @@ bool Scene::load(tinygltf::Model &model, const char *filename) {
   return ret;
 }
 
+void Scene::dbgModel(tinygltf::Model &model) {
+  for (auto &mesh : model.meshes) {
+    std::cout << "mesh : " << mesh.name << std::endl;
+    for (auto &primitive : mesh.primitives) {
+      const tinygltf::Accessor &indexAccessor =
+          model.accessors[primitive.indices];
+
+      std::cout << "indexaccessor: count " << indexAccessor.count << ", type "
+                << indexAccessor.componentType << std::endl;
+
+      /*
+      No support for materials yet
+      tinygltf::Material &mat = model.materials[primitive.material];
+      for (auto &mats : mat.values) {
+        std::cout << "mat : " << mats.first.c_str() << std::endl;
+      }
+
+      for (auto &image : model.images) {
+        std::cout << "image name : " << image.uri << std::endl;
+        std::cout << "  size : " << image.image.size() << std::endl;
+        std::cout << "  w/h : " << image.width << "/" << image.height
+                  << std::endl;
+      }
+      */
+
+      std::cout << "indices : " << primitive.indices << std::endl;
+      std::cout << "mode     : "
+                << "(" << primitive.mode << ")" << std::endl;
+
+      for (auto &attrib : primitive.attributes) {
+        std::cout << "attribute : " << attrib.first.c_str() << std::endl;
+      }
+    }
+  }
+}
+
 void Scene::loadAndDrawTriangle() {
   tinygltf::Model model;
-  std::string filename = "resources/triangle.gltf";
-  if (!load(model, filename.c_str())) return;
+  std::string filename = "resources/models/simple_triangle.gltf";
+  if (!load(model, filename.c_str())) {
+    //std::cout << "File could not be found " << std::endl;
+    return;
+  }
+  std::cout << "File found" << std::endl;
+  dbgModel(model);
 
   GLuint vao;
   std::map<int, GLuint> vbos;
@@ -37,8 +77,8 @@ void Scene::loadAndDrawTriangle() {
 
     const tinygltf::Buffer &buffer = model.buffers[bufferView.buffer];
     GLuint vbo;
-    vbos[i] = vbo;
     glGenBuffers(1, &vbo);
+    vbos[i] = vbo;
     glBindBuffer(bufferView.target, vbo);
     glBufferData(bufferView.target, bufferView.byteLength,
                  &buffer.data.at(0) + bufferView.byteOffset, GL_STATIC_DRAW);
@@ -46,6 +86,8 @@ void Scene::loadAndDrawTriangle() {
 
   for (size_t i = 0; i < mesh.primitives.size(); ++i) {
       tinygltf::Primitive primitive = mesh.primitives[i];
+      tinygltf::Accessor indexAccessor = model.accessors[primitive.indices];
+
       for (auto &attrib : primitive.attributes) {
           tinygltf::Accessor accessor = model.accessors[attrib.second];
           int byteStride = accessor.ByteStride(model.bufferViews[accessor.bufferView]);
@@ -71,9 +113,6 @@ void Scene::loadAndDrawTriangle() {
       tinygltf::Primitive primitive = mesh.primitives[i];
       tinygltf::Accessor indexAccessor = model.accessors[primitive.indices];
       glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, vbos.at(indexAccessor.bufferView));
-      glDrawElements(primitive.mode, indexAccessor.count,
-                     indexAccessor.componentType,
-                     BUFFER_OFFSET(indexAccessor.byteOffset));
+      glDrawElements(GL_TRIANGLES, 3, indexAccessor.componentType, BUFFER_OFFSET(indexAccessor.byteOffset));
   }
-  glBindVertexArray(0);
 };
