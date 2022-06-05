@@ -8,4 +8,5 @@ class Scene
       bool load(tinygltf::Model &model, const char* filename);
       void loadAndDrawTriangle();
       void dbgModel(tinygltf::Model &model);
+      void loadTextures(tinygltf::Model &model);
 };
