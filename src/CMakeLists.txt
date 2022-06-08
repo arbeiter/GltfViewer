@@ -4,7 +4,8 @@ add_executable(${PROJECT_NAME}
   window.h 
   window.cpp
   gltfscene.cpp 
-  gltfscene.h)
+  gltfscene.h
+  utils.hpp)
 
 find_package(glfw3 3.3 REQUIRED)
 set(CMAKE_INCLUDE_CURRENT_DIR ON)

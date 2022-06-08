@@ -8,7 +8,7 @@ bool Scene::load(tinygltf::Model &model, const char *filename) {
   std::string warn;
   bool ret = false;
   ret = loader.LoadASCIIFromFile(&model, &err, &warn, filename);
-  if (!err.empty()) std::cout << "ERR: " << std::endl;
+  if (!err.empty()) std::cout << "ERR : " << std::endl;
   return ret;
 }
 
@@ -50,9 +50,10 @@ void Scene::dbgModel(tinygltf::Model &model) {
 
 void Scene::loadAndDrawTriangle() {
   tinygltf::Model model;
-  std::string filename = "resources/models/simple_triangle.gltf";
+  std::string filename = "resources/models/two_triangles.gltf";
+  getexepath();
   if (!load(model, filename.c_str())) {
-    //std::cout << "File could not be found " << std::endl;
+    std::cout << "File could not be found " << std::endl;
     return;
   }
   std::cout << "File found" << std::endl;
@@ -128,7 +129,7 @@ void Scene::loadAndDrawTriangle() {
   }
 }
 
-void Scene::loadTextures(Model &model) {
+void Scene::loadTextures(tinygltf::Model &model) {
     const std::vector<tinygltf::Texture>& textures = model.textures;
     for(const tinygltf::Texture& texture : textures) {
       if (texture.source > -1) {
