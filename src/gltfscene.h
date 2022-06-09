@@ -1,7 +1,9 @@
 #include <glad/gl.h>
 #include <stb_image.h>
 #include "tiny_gltf.h"
-#include "utils.hpp"
+#include <string.h>
+#include <limits.h>
+#include <unistd.h>
 
 class Scene
 {
@@ -10,4 +12,7 @@ class Scene
       void loadAndDrawTriangle();
       void dbgModel(tinygltf::Model &model);
       void loadTextures(tinygltf::Model &model);
+      void drawCrude(const std::map<int, GLuint>& vbos, tinygltf::Model &model, tinygltf::Mesh &mesh);
+      std::pair<GLuint, std::map<int, GLuint>> bindCrude(tinygltf::Model &model); 
+      std::string getexepath();
 };
