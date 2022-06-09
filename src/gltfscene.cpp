@@ -67,6 +67,7 @@ void Scene::loadAndDrawTriangle() {
 
   std::cout << "File found" << std::endl;
   dbgModel(model);
+
   std::pair<GLuint, std::map<int, GLuint>> vaoAndEbos = bindCrude(model);
   drawCrude(vaoAndEbos.second, model, model.meshes[0]);
 }
@@ -87,14 +88,36 @@ std::pair<GLuint, std::map<int, GLuint>> Scene::bindCrude(tinygltf::Model &model
   glBindVertexArray(vao);
 
   const tinygltf::Scene &scene = model.scenes[model.defaultScene];
-  tinygltf::Node &node = model.nodes[scene.nodes[0]];
-  tinygltf::Mesh &mesh = model.meshes[node.mesh];
+  for(size_t i = 0; i < scene.nodes.size(); ++i) {
+    tinygltf::Node &node = model.nodes[scene.nodes[i]];
+    bindModelNodes(vbos, model, node);
+  }
+  return {vao, vbos};
+}
+
+void Scene::bindModelNodes(std::map<int, GLuint>& vbos, tinygltf::Model &model, tinygltf::Node &node) {
+  // for node in nodes
+  // if termination condition, bindMesh
+  if ((node.mesh >= 0) && (node.mesh < model.meshes.size())) {
+    bindMesh(vbos, model, model.meshes[node.mesh]);
+  }
+
+  for (size_t i = 0; i < node.children.size(); i++) {
+    assert((node.children[i] >= 0) && (node.children[i] < model.nodes.size()));
+    bindModelNodes(vbos, model, model.nodes[node.children[i]]);
+  }
+}
+
+void Scene::bindMesh(std::map<int, GLuint>& vbos,
+                      tinygltf::Model &model, tinygltf::Mesh &mesh) {
+
   for(size_t i = 0; i < model.bufferViews.size(); ++i) {
     const tinygltf::BufferView &bufferView = model.bufferViews[i];
     if(bufferView.target == 0) {
       std::cout << "WARN" << std::endl;
       continue;
     }
+
     const tinygltf::Buffer &buffer = model.buffers[bufferView.buffer];
     GLuint vbo;
     glGenBuffers(1, &vbo);
@@ -127,17 +150,16 @@ std::pair<GLuint, std::map<int, GLuint>> Scene::bindCrude(tinygltf::Model &model
           }
       }
   }
+
   if (model.textures.size() > 0) {
     loadTextures(model);
   }
-  return {vao, vbos};
 }
 
 void Scene::loadTextures(tinygltf::Model &model) {
     const std::vector<tinygltf::Texture>& textures = model.textures;
     for(const tinygltf::Texture& texture : textures) {
       if (texture.source > -1) {
-
         GLuint texid;
         glGenTextures(1, &texid);
 

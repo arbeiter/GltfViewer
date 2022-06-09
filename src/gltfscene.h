@@ -15,4 +15,6 @@ class Scene
       void drawCrude(const std::map<int, GLuint>& vbos, tinygltf::Model &model, tinygltf::Mesh &mesh);
       std::pair<GLuint, std::map<int, GLuint>> bindCrude(tinygltf::Model &model); 
       std::string getexepath();
+      void bindModelNodes(std::map<int, GLuint>& vbos, tinygltf::Model &model, tinygltf::Node &node);
+      void bindMesh(std::map<int, GLuint>& vbos, tinygltf::Model &model, tinygltf::Mesh &mesh);
 };
