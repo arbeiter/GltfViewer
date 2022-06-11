@@ -1,10 +1,8 @@
 #include "gltfscene.h"
-#include <glm/glm.hpp>
-#include <glm/gtc/matrix_transform.hpp>
-#include <glm/gtc/type_ptr.hpp>
 #include <iostream>
 #define BUFFER_OFFSET(i) ((char *)NULL + (i))
 
+glm::mat4 eye(1.0f);
 std::string Scene::getexepath()
 {
   char result[ PATH_MAX ];
@@ -70,17 +68,30 @@ void Scene::loadAndDrawTriangle() {
 
   std::cout << "File found" << std::endl;
   dbgModel(model);
-
   std::pair<GLuint, std::map<int, GLuint>> vaoAndEbos = bindCrude(model);
-  drawCrude(vaoAndEbos.second, model, model.meshes[0]);
+  drawScene(vaoAndEbos.second, model);
 }
 
-void Scene::drawCrude(const std::map<int, GLuint>& vbos, tinygltf::Model &model, tinygltf::Mesh &mesh) {
-  for (size_t i = 0; i < mesh.primitives.size(); ++i) {
-      tinygltf::Primitive primitive = mesh.primitives[i];
-      tinygltf::Accessor indexAccessor = model.accessors[primitive.indices];
-      glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, vbos.at(indexAccessor.bufferView));
-      glDrawElements(GL_TRIANGLES, 3, indexAccessor.componentType, BUFFER_OFFSET(indexAccessor.byteOffset));
+void Scene::drawNode(tinygltf::Node &node, glm::mat4 matrix) {
+}
+
+void Scene::drawMesh(tinygltf::Mesh &mesh, glm::mat4 matrix) {
+}
+
+void Scene::drawScene(const std::map<int, GLuint>& vbos, tinygltf::Model &model) {
+  for (const tinygltf::Scene& scene : model.scenes) {
+    for(size_t i = 0; i < scene.nodes.size(); i++) {
+
+      const tinygltf::Node &node = model.nodes[scene.nodes[i]];
+      tinygltf::Mesh &mesh = model.meshes[node.mesh];
+
+      for (size_t i = 0; i < mesh.primitives.size(); ++i) {
+          tinygltf::Primitive primitive = mesh.primitives[i];
+          tinygltf::Accessor indexAccessor = model.accessors[primitive.indices];
+          glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, vbos.at(indexAccessor.bufferView));
+          glDrawElements(GL_TRIANGLES, 3, indexAccessor.componentType, BUFFER_OFFSET(indexAccessor.byteOffset));
+      }
+    }
   }
 }
 
