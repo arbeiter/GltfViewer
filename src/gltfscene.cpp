@@ -2,7 +2,6 @@
 #include <iostream>
 #define BUFFER_OFFSET(i) ((char *)NULL + (i))
 
-glm::mat4 eye(1.0f);
 std::string Scene::getexepath()
 {
   char result[ PATH_MAX ];
@@ -79,17 +78,23 @@ void Scene::drawMesh(tinygltf::Mesh &mesh, glm::mat4 matrix) {
 }
 
 void Scene::drawScene(const std::map<int, GLuint>& vbos, tinygltf::Model &model) {
+  glm::mat4 model_mat(1.0f);
   for (const tinygltf::Scene& scene : model.scenes) {
     for(size_t i = 0; i < scene.nodes.size(); i++) {
-
       const tinygltf::Node &node = model.nodes[scene.nodes[i]];
       tinygltf::Mesh &mesh = model.meshes[node.mesh];
+      if(node.translation.size() == 3) {
+        model_mat = glm::translate(model_mat, glm::vec3(node.translation[0], node.translation[1], node.translation[2]));
+        std::cout << "XIDC" << std::endl;
+      }
 
       for (size_t i = 0; i < mesh.primitives.size(); ++i) {
           tinygltf::Primitive primitive = mesh.primitives[i];
-          tinygltf::Accessor indexAccessor = model.accessors[primitive.indices];
-          glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, vbos.at(indexAccessor.bufferView));
-          glDrawElements(GL_TRIANGLES, 3, indexAccessor.componentType, BUFFER_OFFSET(indexAccessor.byteOffset));
+          if(primitive.indices > -1) {
+            tinygltf::Accessor indexAccessor = model.accessors[primitive.indices];
+            glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, vbos.at(indexAccessor.bufferView));
+            glDrawElements(GL_TRIANGLES, 3, indexAccessor.componentType, BUFFER_OFFSET(indexAccessor.byteOffset));
+          }
       }
     }
   }
