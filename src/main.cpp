@@ -13,9 +13,8 @@ glm::vec3 center(0);
 glm::vec3 up(0, 1, 0);
 glm::vec2 prev_mouse(-2.f);
 ArcballCamera camera(eye, center, up);
+
 void mouse_callback(GLFWwindow* window, double xpos, double ypos);
-
-
 void displayLoop(Window &window) {
     Shader ourShader("shader.vert", "shader.frag"); // you can name your shader files however you like
     glm::mat4 view = camera.transform();
@@ -69,6 +68,7 @@ int main()
 
     Window window = Window(800, 600, "TinyGLTF basic example");
     glfwMakeContextCurrent(window.window);
+    glfwSetCursorPosCallback(window.window, mouse_callback);
 
     if(!gladLoadGL((GLADloadfunc) glfwGetProcAddress))
     {
