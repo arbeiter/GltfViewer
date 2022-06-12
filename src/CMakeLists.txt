@@ -1,4 +1,6 @@
 add_executable(${PROJECT_NAME} 
+  arcball.h
+  arcball.cpp
   shader.h
   main.cpp 
   window.h 

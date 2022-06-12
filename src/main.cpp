@@ -1,17 +1,24 @@
 #include <glad/gl.h>
 #include <glm/glm.hpp>
 #include <GLFW/glfw3.h>
-#include <shader.h>
 #include <iostream>
 #include <window.h>
 #include <ostream>
 #include <vector>
+#include "arcball.h"
 #include "gltfscene.h"
+
+glm::vec3 eye(0, 0, 5);
+glm::vec3 center(0);
+glm::vec3 up(0, 1, 0);
+glm::vec2 prev_mouse(-2.f);
+ArcballCamera camera(eye, center, up);
+void mouse_callback(GLFWwindow* window, double xpos, double ypos);
+
 
 void displayLoop(Window &window) {
     Shader ourShader("shader.vert", "shader.frag"); // you can name your shader files however you like
-    ourShader.use(); // don't forget to activate/use the shader before setting uniforms!
-
+    glm::mat4 view = camera.transform();
     Scene scene;
     glEnable(GL_DEPTH_TEST);
     glDepthFunc(GL_LESS);
@@ -23,11 +30,35 @@ void displayLoop(Window &window) {
         glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         glEnable(GL_DEPTH_TEST);
-        scene.loadAndDrawTriangle();
+        view = camera.transform();
+        scene.loadAndDrawTriangle(ourShader, view);
         glfwSwapBuffers(window.window);
         glfwPollEvents();
     }
 }
+
+//convert to NDC
+glm::vec2 transform_mouse(int h, int w, glm::vec2 in)
+{
+    return glm::vec2(in.x * 2.f / w - 1.f, 1.f - 2.f * in.y / h );
+}
+
+void mouse_callback(GLFWwindow* window, double xposIn, double yposIn)
+{
+    int* screen_width = new int(0);
+    int* screen_height = new int(0);
+    glfwGetWindowSize( window, screen_width, screen_height );
+
+    float xpos = static_cast<float>(xposIn);
+    float ypos = static_cast<float>(yposIn);
+
+    const glm::vec2 cur_mouse = transform_mouse(*screen_height, *screen_width, glm::vec2(xpos, ypos));
+    if(prev_mouse != glm::vec2(-2.f)) {
+      camera.rotate(prev_mouse, cur_mouse);
+    }
+    prev_mouse = cur_mouse;
+}
+
 
 int main()
 {

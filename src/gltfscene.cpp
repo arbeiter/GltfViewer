@@ -1,6 +1,8 @@
 #include "gltfscene.h"
 #include <iostream>
 #define BUFFER_OFFSET(i) ((char *)NULL + (i))
+const unsigned int SCR_WIDTH = 800;
+const unsigned int SCR_HEIGHT = 600;
 
 std::string Scene::getexepath()
 {
@@ -56,7 +58,7 @@ void Scene::dbgModel(tinygltf::Model &model) {
   }
 }
 
-void Scene::loadAndDrawTriangle() {
+void Scene::loadAndDrawTriangle(Shader &ourShader, glm::mat4 &view) {
   tinygltf::Model model;
   std::string filename = "resources/models/test2/TwoTriangles.gltf";
   if (!load(model, filename.c_str())) {
@@ -68,25 +70,34 @@ void Scene::loadAndDrawTriangle() {
   std::cout << "File found" << std::endl;
   dbgModel(model);
   std::pair<GLuint, std::map<int, GLuint>> vaoAndEbos = bindCrude(model);
-  drawScene(vaoAndEbos.second, model);
+  drawScene(vaoAndEbos.second, model, ourShader, view);
 }
 
 void Scene::drawNode(tinygltf::Node &node, glm::mat4 matrix) {
 }
 
+
 void Scene::drawMesh(tinygltf::Mesh &mesh, glm::mat4 matrix) {
 }
 
-void Scene::drawScene(const std::map<int, GLuint>& vbos, tinygltf::Model &model) {
+void Scene::drawScene(const std::map<int, GLuint>& vbos, tinygltf::Model &model, Shader &ourShader, glm::mat4 &view) {
+  glm::mat4 projection = glm::perspective(glm::radians(45.0f), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.01f, 1000.0f);
   glm::mat4 model_mat(1.0f);
+  glm::vec3 model_pos = glm::vec3(-3, 0, -3);
+
   for (const tinygltf::Scene& scene : model.scenes) {
     for(size_t i = 0; i < scene.nodes.size(); i++) {
       const tinygltf::Node &node = model.nodes[scene.nodes[i]];
       tinygltf::Mesh &mesh = model.meshes[node.mesh];
       if(node.translation.size() == 3) {
         model_mat = glm::translate(model_mat, glm::vec3(node.translation[0], node.translation[1], node.translation[2]));
-        std::cout << "XIDC" << std::endl;
       }
+      model_mat = glm::rotate(model_mat, glm::radians(0.8f), glm::vec3(0, 1, 0));  // rotate model on y axis
+
+      ourShader.use(); // don't forget to activate/use the shader before setting uniforms!
+      ourShader.setMat4("model", model_mat);
+      ourShader.setMat4("view", view);
+      ourShader.setMat4("projection", projection);
 
       for (size_t i = 0; i < mesh.primitives.size(); ++i) {
           tinygltf::Primitive primitive = mesh.primitives[i];
