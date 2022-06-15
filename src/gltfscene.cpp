@@ -4,13 +4,18 @@
 const unsigned int SCR_WIDTH = 800;
 const unsigned int SCR_HEIGHT = 600;
 
+Scene::Scene(Shader &shader): ourShader(shader) {
+  float four_d[16];
+  projection = glm::make_mat4(four_d);
+  view = glm::make_mat4(four_d);
+}
+
 std::string Scene::getexepath()
 {
   char result[ PATH_MAX ];
   ssize_t count = readlink( "/proc/self/exe", result, PATH_MAX );
   return std::string( result, (count > 0) ? count : 0 );
 }
-
 
 bool Scene::load(tinygltf::Model &model, const char *filename) {
   tinygltf::TinyGLTF loader;
@@ -58,7 +63,7 @@ void Scene::dbgModel(tinygltf::Model &model) {
   }
 }
 
-void Scene::loadAndDrawTriangle(Shader &ourShader, glm::mat4 &view) {
+void Scene::loadAndDrawTriangle(glm::mat4 &view) {
   tinygltf::Model model;
   std::string filename = "resources/models/test2/TwoTriangles.gltf";
   if (!load(model, filename.c_str())) {
@@ -67,30 +72,19 @@ void Scene::loadAndDrawTriangle(Shader &ourShader, glm::mat4 &view) {
     return;
   }
 
-  std::cout << "File found" << std::endl;
   //dbgModel(model);
   std::pair<GLuint, std::map<int, GLuint>> vaoAndEbos = bindCrude(model);
-  drawScene(vaoAndEbos.second, model, ourShader, view);
+  drawScene(vaoAndEbos.second, model, view);
 }
 
-void Scene::drawNode(tinygltf::Node &node, glm::mat4 matrix) {
-}
-
-
-void Scene::drawMesh(tinygltf::Mesh &mesh, glm::mat4 matrix) {
-}
-
-void Scene::drawScene(const std::map<int, GLuint>& vbos, tinygltf::Model &model, Shader &ourShader, glm::mat4 &view) {
-  glm::mat4 projection = glm::perspective(glm::radians(45.0f), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.01f, 1000.0f);
-  glm::mat4 model_mat(1.0f);
-
-  for (const tinygltf::Scene& scene : model.scenes) {
-    for(size_t i = 0; i < scene.nodes.size(); i++) {
-      const tinygltf::Node &node = model.nodes[scene.nodes[i]];
+void Scene::drawNode(tinygltf::Model &model, const tinygltf::Node &node, glm::mat4 matrix, std::map<int, GLuint> vbos) {
+      glm::mat4 model_mat = matrix;
       tinygltf::Mesh &mesh = model.meshes[node.mesh];
+
       if(node.translation.size() == 3) {
         model_mat = glm::translate(model_mat, glm::vec3(node.translation[0], node.translation[1], node.translation[2]));
       }
+
       if(node.matrix.size() == 16) {
         glm::mat4 gltf_mat(1.0f);
         gltf_mat[0][0] = node.matrix[0];
@@ -115,12 +109,13 @@ void Scene::drawScene(const std::map<int, GLuint>& vbos, tinygltf::Model &model,
 
         model_mat = model_mat * gltf_mat;
       }
+      projection = glm::perspective(glm::radians(45.0f), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.01f, 1000.0f);
       model_mat = glm::rotate(model_mat, glm::radians(0.8f), glm::vec3(0, 1, 0));  // rotate model on y axis
-
       ourShader.use(); // don't forget to activate/use the shader before setting uniforms!
       ourShader.setMat4("model", model_mat);
       ourShader.setMat4("view", view);
       ourShader.setMat4("projection", projection);
+
       glm::vec3 v_position = glm::vec3(projection[3][0], projection[3][0], projection[3][0]);
       ourShader.setVec3("light_pos", v_position);
 
@@ -132,6 +127,22 @@ void Scene::drawScene(const std::map<int, GLuint>& vbos, tinygltf::Model &model,
             glDrawElements(GL_TRIANGLES, 3, indexAccessor.componentType, BUFFER_OFFSET(indexAccessor.byteOffset));
           }
       }
+}
+
+void Scene::drawMesh(tinygltf::Mesh &mesh, glm::mat4 matrix, std::map<int, GLuint> vbos) {
+}
+
+void Scene::setView(glm::mat4 &viewParam) {
+  view = viewParam;
+}
+
+void Scene::drawScene(const std::map<int, GLuint>& vbos, tinygltf::Model &model, glm::mat4 &viewParam) {
+  setView(viewParam);
+  glm::mat4 model_mat(1.0f);
+  for (const tinygltf::Scene& scene : model.scenes) {
+    for(size_t i = 0; i < scene.nodes.size(); i++) {
+      const tinygltf::Node &node = model.nodes[scene.nodes[i]];
+      drawNode(model, node, model_mat, vbos);
     }
   }
 }

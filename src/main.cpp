@@ -18,8 +18,10 @@ void processInput(GLFWwindow *window);
 
 void displayLoop(Window &window) {
     Shader ourShader("shader.vert", "shader.frag"); // you can name your shader files however you like
+    std::string shader_vert_path = "shader.vert";
+    std::string shader_frag_path = "shader.frag";
     glm::mat4 view = camera.transform();
-    Scene scene;
+    Scene scene = Scene(ourShader);
     glEnable(GL_DEPTH_TEST);
     glDepthFunc(GL_LESS);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
@@ -32,7 +34,7 @@ void displayLoop(Window &window) {
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         glEnable(GL_DEPTH_TEST);
         view = camera.transform();
-        scene.loadAndDrawTriangle(ourShader, view);
+        scene.loadAndDrawTriangle(view);
         glfwSwapBuffers(window.window);
         glfwPollEvents();
     }
