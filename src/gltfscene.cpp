@@ -91,6 +91,30 @@ void Scene::drawScene(const std::map<int, GLuint>& vbos, tinygltf::Model &model,
       if(node.translation.size() == 3) {
         model_mat = glm::translate(model_mat, glm::vec3(node.translation[0], node.translation[1], node.translation[2]));
       }
+      if(node.matrix.size() == 16) {
+        glm::mat4 gltf_mat(1.0f);
+        gltf_mat[0][0] = node.matrix[0];
+        gltf_mat[0][1] = node.matrix[1];
+        gltf_mat[0][2] = node.matrix[2];
+        gltf_mat[0][3] = node.matrix[3];
+
+        gltf_mat[1][0] = node.matrix[4];
+        gltf_mat[1][1] = node.matrix[5];
+        gltf_mat[1][2] = node.matrix[6];
+        gltf_mat[1][3] = node.matrix[7];
+
+        gltf_mat[2][0] = node.matrix[8];
+        gltf_mat[2][1] = node.matrix[9];
+        gltf_mat[2][2] = node.matrix[10];
+        gltf_mat[2][3] = node.matrix[11];
+
+        gltf_mat[3][0] = node.matrix[12];
+        gltf_mat[3][1] = node.matrix[13];
+        gltf_mat[3][2] = node.matrix[14];
+        gltf_mat[3][3] = node.matrix[15];
+
+        model_mat = model_mat * gltf_mat;
+      }
       model_mat = glm::rotate(model_mat, glm::radians(0.8f), glm::vec3(0, 1, 0));  // rotate model on y axis
 
       ourShader.use(); // don't forget to activate/use the shader before setting uniforms!
