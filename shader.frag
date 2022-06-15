@@ -1,11 +1,13 @@
 #version 330 core
 in vec3 v_position;
+in vec3 light_position;
 in vec3 v_normal;
 out vec4 FragColor;
 
 void main()
 {
     vec3 light_position_wc = vec3(0.0f, 1.0f, 1.0f);
+    //vec3 light_position_wc = light_position;
     vec4 light_diffuse = vec4(1.0f, 1.0f, 1.0f, 1.0f);
     vec4 light_specular = vec4(1.0f, 0.5f, 0.5f, 1.0f);
     vec4 material_diffuse = vec4(1.0f, 1.0f, 1.0f, 1.0f);

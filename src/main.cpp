@@ -13,8 +13,9 @@ glm::vec3 center(0);
 glm::vec3 up(0, 1, 0);
 glm::vec2 prev_mouse(-2.f);
 ArcballCamera camera(eye, center, up);
-
 void mouse_callback(GLFWwindow* window, double xpos, double ypos);
+void processInput(GLFWwindow *window);
+
 void displayLoop(Window &window) {
     Shader ourShader("shader.vert", "shader.frag"); // you can name your shader files however you like
     glm::mat4 view = camera.transform();
@@ -26,6 +27,7 @@ void displayLoop(Window &window) {
 
     while (!glfwWindowShouldClose(window.window))
     {
+        processInput(window.window);
         glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         glEnable(GL_DEPTH_TEST);
@@ -36,7 +38,18 @@ void displayLoop(Window &window) {
     }
 }
 
-//convert to NDC
+void processInput(GLFWwindow *window)
+{
+    glm::vec2 p_mouse(0.005f);
+    glm::vec2 c_mouse(-0.005f);
+    if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
+      glfwSetWindowShouldClose(window, true);
+    if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
+      camera.pan(p_mouse);
+    if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
+      camera.pan(c_mouse);
+}
+
 glm::vec2 transform_mouse(int h, int w, glm::vec2 in)
 {
     return glm::vec2(in.x * 2.f / w - 1.f, 1.f - 2.f * in.y / h );

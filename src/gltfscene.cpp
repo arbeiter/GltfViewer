@@ -68,7 +68,7 @@ void Scene::loadAndDrawTriangle(Shader &ourShader, glm::mat4 &view) {
   }
 
   std::cout << "File found" << std::endl;
-  dbgModel(model);
+  //dbgModel(model);
   std::pair<GLuint, std::map<int, GLuint>> vaoAndEbos = bindCrude(model);
   drawScene(vaoAndEbos.second, model, ourShader, view);
 }
@@ -83,7 +83,6 @@ void Scene::drawMesh(tinygltf::Mesh &mesh, glm::mat4 matrix) {
 void Scene::drawScene(const std::map<int, GLuint>& vbos, tinygltf::Model &model, Shader &ourShader, glm::mat4 &view) {
   glm::mat4 projection = glm::perspective(glm::radians(45.0f), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.01f, 1000.0f);
   glm::mat4 model_mat(1.0f);
-  glm::vec3 model_pos = glm::vec3(-3, 0, -3);
 
   for (const tinygltf::Scene& scene : model.scenes) {
     for(size_t i = 0; i < scene.nodes.size(); i++) {
@@ -98,8 +97,8 @@ void Scene::drawScene(const std::map<int, GLuint>& vbos, tinygltf::Model &model,
       ourShader.setMat4("model", model_mat);
       ourShader.setMat4("view", view);
       ourShader.setMat4("projection", projection);
-      glm::vec3 v_position = glm::vec3(projection[0][3], projection[1][3], projection[2][3]);
-      ourShader.setVec3("v_pos", v_position);
+      glm::vec3 v_position = glm::vec3(projection[3][0], projection[3][0], projection[3][0]);
+      ourShader.setVec3("light_pos", v_position);
 
       for (size_t i = 0; i < mesh.primitives.size(); ++i) {
           tinygltf::Primitive primitive = mesh.primitives[i];
