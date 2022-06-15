@@ -98,6 +98,8 @@ void Scene::drawScene(const std::map<int, GLuint>& vbos, tinygltf::Model &model,
       ourShader.setMat4("model", model_mat);
       ourShader.setMat4("view", view);
       ourShader.setMat4("projection", projection);
+      glm::vec3 v_position = glm::vec3(projection[0][3], projection[1][3], projection[2][3]);
+      ourShader.setVec3("v_pos", v_position);
 
       for (size_t i = 0; i < mesh.primitives.size(); ++i) {
           tinygltf::Primitive primitive = mesh.primitives[i];
