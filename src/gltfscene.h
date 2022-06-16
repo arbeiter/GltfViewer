@@ -32,6 +32,6 @@ class Scene
 
       void drawScene(const std::map<int, GLuint>& vbos, tinygltf::Model &model, glm::mat4 &viewParam);
       void drawNode(tinygltf::Model &model, const tinygltf::Node &node, glm::mat4 matrix, std::map<int, GLuint> vbos);
-      void drawMesh(tinygltf::Mesh &mesh, glm::mat4 matrix, std::map<int, GLuint> vbos);
+      void drawMesh(tinygltf::Mesh &mesh, tinygltf::Model &model, glm::mat4 matrix, std::map<int, GLuint> vbos);
       void setView(glm::mat4 &viewParam);
 };

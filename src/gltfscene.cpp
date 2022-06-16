@@ -79,7 +79,6 @@ void Scene::loadAndDrawTriangle(glm::mat4 &view) {
 
 void Scene::drawNode(tinygltf::Model &model, const tinygltf::Node &node, glm::mat4 matrix, std::map<int, GLuint> vbos) {
       glm::mat4 model_mat = matrix;
-      tinygltf::Mesh &mesh = model.meshes[node.mesh];
 
       if(node.translation.size() == 3) {
         model_mat = glm::translate(model_mat, glm::vec3(node.translation[0], node.translation[1], node.translation[2]));
@@ -109,27 +108,38 @@ void Scene::drawNode(tinygltf::Model &model, const tinygltf::Node &node, glm::ma
 
         model_mat = model_mat * gltf_mat;
       }
-      projection = glm::perspective(glm::radians(45.0f), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.01f, 1000.0f);
+
       model_mat = glm::rotate(model_mat, glm::radians(0.8f), glm::vec3(0, 1, 0));  // rotate model on y axis
-      ourShader.use(); // don't forget to activate/use the shader before setting uniforms!
-      ourShader.setMat4("model", model_mat);
-      ourShader.setMat4("view", view);
-      ourShader.setMat4("projection", projection);
 
-      glm::vec3 v_position = glm::vec3(projection[3][0], projection[3][0], projection[3][0]);
-      ourShader.setVec3("light_pos", v_position);
 
-      for (size_t i = 0; i < mesh.primitives.size(); ++i) {
-          tinygltf::Primitive primitive = mesh.primitives[i];
-          if(primitive.indices > -1) {
-            tinygltf::Accessor indexAccessor = model.accessors[primitive.indices];
-            glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, vbos.at(indexAccessor.bufferView));
-            glDrawElements(GL_TRIANGLES, 3, indexAccessor.componentType, BUFFER_OFFSET(indexAccessor.byteOffset));
-          }
+      if(node.mesh > -1) {
+        tinygltf::Mesh &mesh = model.meshes[node.mesh];
+        drawMesh(mesh, model, model_mat, vbos);
+      }
+      for(size_t i = 0; i < node.children.size(); ++i)
+      {
+        const tinygltf::Node child = model.nodes[node.children[i]];
+        drawNode(model, child, model_mat, vbos);
       }
 }
 
-void Scene::drawMesh(tinygltf::Mesh &mesh, glm::mat4 matrix, std::map<int, GLuint> vbos) {
+void Scene::drawMesh(tinygltf::Mesh &mesh, tinygltf::Model &model, glm::mat4 matrix, std::map<int, GLuint> vbos) {
+  ourShader.use();
+  projection = glm::perspective(glm::radians(45.0f), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.01f, 1000.0f);
+  ourShader.setMat4("model", matrix);
+  ourShader.setMat4("view", view);
+  ourShader.setMat4("projection", projection);
+  glm::vec3 v_position = glm::vec3(projection[3][0], projection[3][1], projection[3][2]);
+  ourShader.setVec3("light_pos", v_position);
+
+  for (size_t i = 0; i < mesh.primitives.size(); ++i) {
+      tinygltf::Primitive primitive = mesh.primitives[i];
+      if(primitive.indices > -1) {
+        tinygltf::Accessor indexAccessor = model.accessors[primitive.indices];
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, vbos.at(indexAccessor.bufferView));
+        glDrawElements(GL_TRIANGLES, 3, indexAccessor.componentType, BUFFER_OFFSET(indexAccessor.byteOffset));
+      }
+  }
 }
 
 void Scene::setView(glm::mat4 &viewParam) {
