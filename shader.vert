@@ -8,12 +8,12 @@ uniform mat4 view;
 uniform mat4 projection;
 
 out vec3 v_normal;
-out vec3 v_position;
-out vec3 light_position;
+out vec3 world_pos;
+out vec3 cameraLightPos;
 
 void main() {
     gl_Position = projection * view * model * vec4(aPos, 1.0);
-    v_position = (model * vec4(aPos, 1)).xyz;
+    world_pos = (model * vec4(aPos, 1)).xyz;
     v_normal = (model * vec4(a_normal, 0)).xyz;
-    light_position = light_pos;
+    cameraLightPos = light_pos;
 }
