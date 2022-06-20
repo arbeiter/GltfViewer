@@ -1,7 +1,10 @@
 #pragma once
 //Credits: https://github.com/Twinklebear 
-#include <glm/ext.hpp>
-#include <glm/glm.hpp>
+#include <ext.hpp>
+#include <glm.hpp>
+#include <gtx/transform.hpp>
+#include <cmath>
+#include <iostream>
 
 /* A simple arcball camera that moves around the camera's focal point.
  * The mouse inputs to the camera should be in normalized device coordinates,

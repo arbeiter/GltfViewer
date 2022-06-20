@@ -1,8 +1,4 @@
 #include "arcball.h"
-#include <cmath>
-#include <iostream>
-#include <glm/ext.hpp>
-#include <glm/gtx/transform.hpp>
 
 // Project the point in [-1, 1] screen space onto the arcball sphere
 static glm::quat screen_to_arcball(const glm::vec2 &p);

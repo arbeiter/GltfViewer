@@ -1,5 +1,5 @@
 #include <glad/gl.h>
-#include <glm/glm.hpp>
+#include <glm.hpp>
 #include <GLFW/glfw3.h>
 #include <iostream>
 #include <window.h>
