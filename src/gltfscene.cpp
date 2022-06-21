@@ -1,10 +1,12 @@
 #include "gltfscene.h"
 #include <iostream>
 #define BUFFER_OFFSET(i) ((char *)NULL + (i))
-const unsigned int SCR_WIDTH = 800;
-const unsigned int SCR_HEIGHT = 600;
+const float SCR_WIDTH = 3440.0f;
+const float SCR_HEIGHT = 1440.0f;
 
 Scene::Scene(Shader &shader): ourShader(shader) {
+  width = 800;
+  height = 600; 
   float four_d[16];
   projection = glm::make_mat4(four_d);
   view = glm::make_mat4(four_d);
@@ -63,6 +65,11 @@ void Scene::dbgModel(tinygltf::Model &model) {
   }
 }
 
+void Scene::setWidthAndHeight(int w, int h) {
+  width = w;
+  height = h;
+}
+
 void Scene::loadAndDrawTriangle(glm::mat4 &view) {
   tinygltf::Model model;
   std::string filename = "resources/models/test2/TwoTriangles.gltf";
@@ -111,7 +118,6 @@ void Scene::drawNode(tinygltf::Model &model, const tinygltf::Node &node, glm::ma
 
       model_mat = glm::rotate(model_mat, glm::radians(0.8f), glm::vec3(0, 1, 0));  // rotate model on y axis
 
-
       if(node.mesh > -1) {
         tinygltf::Mesh &mesh = model.meshes[node.mesh];
         drawMesh(mesh, model, model_mat, vbos);
@@ -125,7 +131,7 @@ void Scene::drawNode(tinygltf::Model &model, const tinygltf::Node &node, glm::ma
 
 void Scene::drawMesh(tinygltf::Mesh &mesh, tinygltf::Model &model, glm::mat4 matrix, std::map<int, GLuint> vbos) {
   ourShader.use();
-  projection = glm::perspective(glm::radians(45.0f), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.01f, 1000.0f);
+  projection = glm::perspective(glm::radians(45.0f), (float)(width/ height), 0.1f, 4000.0f);
   ourShader.setMat4("model", matrix);
   ourShader.setMat4("view", view);
   ourShader.setMat4("projection", projection);

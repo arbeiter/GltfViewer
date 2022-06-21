@@ -13,6 +13,8 @@ class Scene
 {
   private:
       glm::mat4 view;
+      int width;
+      int height;
 
   public:
       glm::mat4 projection;
@@ -34,4 +36,5 @@ class Scene
       void drawNode(tinygltf::Model &model, const tinygltf::Node &node, glm::mat4 matrix, std::map<int, GLuint> vbos);
       void drawMesh(tinygltf::Mesh &mesh, tinygltf::Model &model, glm::mat4 matrix, std::map<int, GLuint> vbos);
       void setView(glm::mat4 &viewParam);
+      void setWidthAndHeight(int w, int h);
 };

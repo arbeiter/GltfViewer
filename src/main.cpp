@@ -8,10 +8,13 @@
 #include "arcball.h"
 #include "gltfscene.h"
 
+int curr_width = 800;
+int curr_height = 600;
 glm::vec3 eye(0, 0, 5);
 glm::vec3 center(0);
 glm::vec3 up(0, 1, 0);
 glm::vec2 prev_mouse(-2.f);
+float zoom_amount = 1;
 ArcballCamera camera(eye, center, up);
 void mouse_callback(GLFWwindow* window, double xpos, double ypos);
 void processInput(GLFWwindow *window);
@@ -34,6 +37,7 @@ void displayLoop(Window &window) {
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         glEnable(GL_DEPTH_TEST);
         view = camera.transform();
+        scene.setWidthAndHeight(curr_width, curr_height);
         scene.loadAndDrawTriangle(view);
         glfwSwapBuffers(window.window);
         glfwPollEvents();
@@ -73,6 +77,16 @@ void mouse_callback(GLFWwindow* window, double xposIn, double yposIn)
     prev_mouse = cur_mouse;
 }
 
+void scroll_callback(GLFWwindow* window, double xoffset, double yoffset) {
+  camera.zoom(yoffset * 0.1);
+}
+
+void glfwSetWindowSizeCallback(GLFWwindow* window, int width, int height)
+{
+  curr_width = width;
+  curr_height = height;
+  std::cout << "CURR_WIDTH" << width << std::endl;
+};
 
 int main()
 {
@@ -80,10 +94,11 @@ int main()
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 6);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-
     Window window = Window(800, 600, "TinyGLTF basic example");
     glfwMakeContextCurrent(window.window);
     glfwSetCursorPosCallback(window.window, mouse_callback);
+    glfwSetScrollCallback(window.window, scroll_callback);
+    glfwSetWindowSizeCallback(window.window, glfwSetWindowSizeCallback);
 
     if(!gladLoadGL((GLADloadfunc) glfwGetProcAddress))
     {
