@@ -88,6 +88,14 @@ void glfwSetWindowSizeCallback(GLFWwindow* window, int width, int height)
   std::cout << "CURR_WIDTH" << width << std::endl;
 };
 
+// glfw: whenever the window size changed (by OS or user resize) this callback function executes
+// ---------------------------------------------------------------------------------------------
+void framebuffer_size_callback(GLFWwindow* window, int width, int height)
+{
+    // make sure the viewport matches the new window dimensions; note that width and 
+    // height will be significantly larger than specified on retina displays.
+    glViewport(0, 0, width, height);
+}
 int main()
 {
     glfwInit();
@@ -99,6 +107,7 @@ int main()
     glfwSetCursorPosCallback(window.window, mouse_callback);
     glfwSetScrollCallback(window.window, scroll_callback);
     glfwSetWindowSizeCallback(window.window, glfwSetWindowSizeCallback);
+    glfwSetFramebufferSizeCallback(window.window, framebuffer_size_callback);
 
     if(!gladLoadGL((GLADloadfunc) glfwGetProcAddress))
     {
