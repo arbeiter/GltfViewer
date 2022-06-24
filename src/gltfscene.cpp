@@ -149,6 +149,7 @@ void Scene::drawMesh(tinygltf::Mesh &mesh, tinygltf::Model &model, glm::mat4 mat
 }
 
 void Scene::setView(glm::mat4 &viewParam) {
+  //std::cout << glm::to_string(viewParam) << std::endl;
   view = viewParam;
 }
 

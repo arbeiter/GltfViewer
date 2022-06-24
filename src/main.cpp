@@ -10,10 +10,12 @@
 
 int curr_width = 800;
 int curr_height = 600;
+
 glm::vec3 eye(0, 0, 5);
 glm::vec3 center(0);
 glm::vec3 up(0, 1, 0);
 glm::vec2 prev_mouse(-2.f);
+
 float zoom_amount = 1;
 ArcballCamera camera(eye, center, up);
 void mouse_callback(GLFWwindow* window, double xpos, double ypos);
@@ -102,6 +104,7 @@ int main()
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 6);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+
     Window window = Window(800, 600, "TinyGLTF basic example");
     glfwMakeContextCurrent(window.window);
     glfwSetCursorPosCallback(window.window, mouse_callback);

@@ -1,9 +1,8 @@
 #version 330 core
 
-in vec3 cameraLightPos;
+in vec3 camPos;
 in vec3 world_pos;
 in vec3 v_normal;
-uniform vec3 camPos;
 out vec4 FragColor;
 
 struct PointLight {
@@ -20,6 +19,8 @@ struct PBRInfo {
   float roughness;
   float metallic;
   float NoV;
+  vec3 eye_dir;
+  vec3 half_vector;
 };
 
 const float PI = 3.14159265359;
@@ -61,7 +62,7 @@ float GeometrySmith(vec3 N, vec3 V, vec3 L, float roughness)
 
 vec3 fresnelSchlick(float cosTheta, vec3 F0)
 {
-    return F0 + (1.0 - F0) * pow(clamp(1.0 - cosTheta, 0.0, 1.0), 5.0);
+    return F0 + (1.0 - F0) * pow(clamp((1.0 - abs(cosTheta)), 0.0, 1.0), 5.0);
 }
 
 
@@ -76,6 +77,16 @@ vec3 LambertDiffuse(vec3 kD, vec3 albedoFrag)
 }
 
 // ------ GLTF2 SPEC IMPLEMENTATION START -----
+vec3 LinearSRGB(vec3 c) {
+  float power = 2.2;
+  return pow(c, vec3(power));
+}
+
+vec3 SRGBLinear(vec3 c) {
+  float power = 1.0 /2.2;
+  return pow(c, vec3(power));
+}
+
 vec3 conductor_fresnel(vec3 f0, vec3 bsdf, float HoV) {
   return bsdf * (f0 + (1 - f0) * (1 - abs(int(HoV))^5));
 }
@@ -109,7 +120,36 @@ vec3 dielectric_brdf(float ior, vec3 baseColor, float perceptualRoughness, float
   return fresnel_mix(ior, base, layer, HoV);
 }
 
-vec3 gltfSpecBRDFPointUnsimplified(PointLight light, PBRInfo pbrInfo)
+vec3 gltfSpecVersion1(PointLight light, PBRInfo pbrInfo) {
+  float distance = length(light.position.xyz - pbrInfo.WP);
+  float attenuation = 1.0 / (distance * distance);
+  vec3 radiance = light.color.xyz * attenuation; 
+
+  vec3 baseColor = vec3(1.0, 0.766, 0.336);
+  vec3 L = normalize(light.position - pbrInfo.WP);
+  vec3 H = normalize(pbrInfo.V + L);
+
+  float NoV = clamp(dot(pbrInfo.N, pbrInfo.V), 0.001, 1.0);
+  float VoH = clamp(dot(pbrInfo.V, H), 0.0, 1.0);
+  float NoL = clamp(dot(pbrInfo.N, L), 0.001, 1.0);
+  float black = 1.0;
+  float D = DistributionGGX(pbrInfo.N, H, pbrInfo.roughness);
+  float G   = GeometrySmith(pbrInfo.N, pbrInfo.V, L, pbrInfo.roughness);
+  vec3 F = fresnelSchlick(VoH, pbrInfo.F0);
+  float visibility  = (G) / (4 * NoL * NoV);
+
+  vec3 specular_brdf = (vec3(visibility * D) * F); 
+  vec3 metallic = specular_brdf * (baseColor + (1 - baseColor) * pow(1 - int(VoH), 5));
+
+  vec3 c_diff = mix(baseColor.rgb, vec3(black), metallic);
+  vec3 f_diffuse = (1 - F) * (1 / PI) * c_diff;
+  vec3 f_specular = F * D * G / (4 * abs(NoV) * abs(NoL));
+  vec3 material = f_diffuse + f_specular;
+  vec3 color =  material;
+  return SRGBLinear(color * radiance);
+}
+
+vec3 gltfSpecVersion2(PointLight light, PBRInfo pbrInfo)
 {
   vec3 baseColor = vec3(1.0, 0.766, 0.336);
   vec3 L = normalize(light.position - pbrInfo.WP);
@@ -119,32 +159,52 @@ vec3 gltfSpecBRDFPointUnsimplified(PointLight light, PBRInfo pbrInfo)
   float VoH = clamp(dot(pbrInfo.V, H), 0.0, 1.0);
   float NoL = clamp(dot(pbrInfo.N, L), 0.001, 1.0);
   float NoV = clamp(dot(pbrInfo.N, pbrInfo.V), 0.001, 1.0);
+  float D = DistributionGGX(pbrInfo.N, H, pbrInfo.roughness);   
+  float G   = GeometrySmith(pbrInfo.N, pbrInfo.V, L, pbrInfo.roughness);      
+  vec3 F = fresnelSchlick(VoH, pbrInfo.F0);
+  float visibility  = (G) / (4 * NoL * NoV);
+  vec3 specular_brdf = (vec3(visibility * D) * F); 
 
-  // Calculate radiance
-  float distance = length(light.position.xyz - pbrInfo.WP);
-  float attenuation = 1.0 / (distance * distance);
-  vec3 radiance = light.color.xyz * attenuation; 
+  vec3 diffuse_term = baseColor.rgb / radians(180);
+  vec3 dielectric = fresnel_mix(1.0, diffuse_term, specular_brdf, VoH);
+  vec3 metal = specular_brdf * (baseColor + (1 - baseColor) * pow(1 - int(HoV), 5));
+  vec3 color = light.color * NoL * (diffuse_term + specular_brdf);
+  return color;
+}
+
+vec3 gltfSpecBRDFPointUnsimplified(PointLight light, PBRInfo pbrInfo)
+{
+  vec3 baseColor = vec3(0.0, 0.0, 0.0);
+  vec3 L = normalize(light.position - pbrInfo.WP);
+  vec3 H = normalize(pbrInfo.V + L);
+  float HoV = clamp(dot(H, pbrInfo.V), 0.0, 1.0);
+  float NoH = clamp(dot(pbrInfo.N, H), 0.0, 1.0);
+  float VoH = clamp(dot(pbrInfo.V, H), 0.0, 1.0);
+  float NoL = clamp(dot(pbrInfo.N, L), 0.001, 1.0);
+  float NoV = clamp(dot(pbrInfo.N, pbrInfo.V), 0.001, 1.0);
 
   // Calculate D, G, F
   float D = DistributionGGX(pbrInfo.N, H, pbrInfo.roughness);   
   float G   = GeometrySmith(pbrInfo.N, pbrInfo.V, L, pbrInfo.roughness);      
-
   vec3 F = fresnelSchlick(VoH, pbrInfo.F0);
   float visibility  = (G) / (4 * NoL * NoV);
-
-  float ior = 10;
+  float ior = 1;
   vec3 dielectric = dielectric_brdf(ior, baseColor, pbrInfo.roughness, D, visibility, HoV);
-  // vec3 metal = conductor_fresnel(texture(base_color[entity_id], uv).rgb, specular_brdf, eye_dir, half_vector);
   vec3 metal = metal_brdf(pbrInfo.roughness, baseColor, D, visibility, HoV); 
   vec3 material = mix(dielectric, metal, pbrInfo.metallic);
   return material;
 }
 
+vec3 gltfSpecGithubComment(PointLight light, PBRInfo pbrInfo) {
+  // baseColor
+  vec3 baseColor = vec3(0.0, 0.0, 0.0);
+  return baseColor;
+}
+
 // ------- GLTF2 SPEC IMPLEMENTATION END ---- //
 
-
-vec3 CookTorrBRDFPoint(PointLight light, PBRInfo pbrInfo)
-{
+vec3 CookTorrBRDFPoint(PointLight light, PBRInfo pbrInfo) {
+  vec3 baseColor = vec3(1.0, 0.766, 0.336);
   vec3 L = normalize(light.position - pbrInfo.WP);
   vec3 H = normalize(pbrInfo.V + L);
   float HoV = clamp(dot(H, pbrInfo.V), 0.0, 1.0);
@@ -171,21 +231,20 @@ vec3 CookTorrBRDFPoint(PointLight light, PBRInfo pbrInfo)
   vec3 lambertianDiffuse = LambertDiffuse(kD, pbrInfo.albedo);
   vec3 brdfTerm = CookTorranceBRDF(D, F, G, NoL, pbrInfo.NoV);
   vec3 outputColor = lambertianDiffuse + brdfTerm * radiance * NoL;
-  return outputColor;
+  return radiance * outputColor;
 }
 
 PBRInfo generatePBRInfo(PBRInfo pbrInfo) {
   float hardCodedMetallicFactor = 0.5f;
-  vec3 albedoFactor = vec3(1.0, 0.766, 0.336);
   float roughnessFactor = 0.1f;
-  vec3 derived_v = normalize(camPos - world_pos);
+  vec3 derived_v = normalize(camPos.xyz - world_pos);
 
   pbrInfo.WP = world_pos;
-  pbrInfo.albedo = albedoFactor;
+  pbrInfo.albedo = vec3(1.0);
   pbrInfo.metallic = hardCodedMetallicFactor;
 
   vec3 fresnel = vec3(0.04); 
-  fresnel = mix(fresnel, pbrInfo.albedo, vec3(pbrInfo.metallic)); // ???????
+  fresnel = mix(fresnel, pbrInfo.albedo, vec3(pbrInfo.metallic));
 
   pbrInfo.F0 = fresnel;
   pbrInfo.N = v_normal;
@@ -196,7 +255,7 @@ PBRInfo generatePBRInfo(PBRInfo pbrInfo) {
 }
 
 PointLight generatePointLight(PointLight light) {
-  light.position = cameraLightPos;
+  light.position = camPos;
   light.color = vec3(1.0f, 1.0f, 1.0f);
   return light;
 }
@@ -208,6 +267,7 @@ void main()
 
     light = generatePointLight(light);
     pbrInfo = generatePBRInfo(pbrInfo);
-    vec3 color = gltfSpecBRDFPointUnsimplified(light, pbrInfo);
-    FragColor = vec4(color, 1.0f);
+    vec3 color = gltfSpecVersion1(light, pbrInfo);
+    vec3 x = color;
+    FragColor = vec4(x, 1.0f);
 }

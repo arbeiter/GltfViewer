@@ -9,11 +9,11 @@ uniform mat4 projection;
 
 out vec3 v_normal;
 out vec3 world_pos;
-out vec3 cameraLightPos;
+out vec3 camPos;
 
 void main() {
     world_pos = (model * vec4(aPos, 1)).xyz;
     v_normal = (model * vec4(a_normal, 0)).xyz;
-    cameraLightPos = light_pos;
+    camPos = light_pos;
     gl_Position = projection * view * model * vec4(aPos, 1.0);
 }
