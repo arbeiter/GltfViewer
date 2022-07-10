@@ -3,6 +3,8 @@
 in vec3 camPos;
 in vec3 world_pos;
 in vec3 v_normal;
+in float metallicFactor;
+in float roughFactor;
 out vec4 FragColor;
 
 struct PointLight {
@@ -139,8 +141,11 @@ vec3 gltfSpecVersion(PointLight light, PBRInfo pbrInfo) {
 }
 
 PBRInfo generatePBRInfo(PBRInfo pbrInfo) {
-  float hardCodedMetallicFactor = 0.5f;
-  float roughnessFactor = 0.1f;
+  // baseColorFactor
+  // metallicFactor
+  // roughnessFactor
+  float hardCodedMetallicFactor = metallicFactor;
+  float roughnessFactor = roughFactor;
   vec3 derived_v = normalize(camPos.xyz - world_pos);
 
   pbrInfo.WP = world_pos;

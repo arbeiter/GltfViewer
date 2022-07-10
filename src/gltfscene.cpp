@@ -174,12 +174,12 @@ void Scene::drawMesh(tinygltf::Mesh &mesh, tinygltf::Model &model, glm::mat4 mat
           else if (value.first == "metallicFactor")
           {
             float number = value.second.number_value;
-            ourShader.setFloat("metallic_factor", number);
+            ourShader.setFloat("metallicFactor", number);
           }
-          else if (value.first == "roughnessFactor")
+          else if (value.first == "roughFactor")
           {
             float number = value.second.number_value;
-            ourShader.setFloat("roughnessFactor", number);
+            ourShader.setFloat("roughFactor", number);
           }
         }
       }
