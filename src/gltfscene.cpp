@@ -72,7 +72,7 @@ void Scene::setWidthAndHeight(int w, int h) {
 
 void Scene::loadAndDrawTriangle(glm::mat4 &view) {
   tinygltf::Model model;
-  std::string filename = "resources/models/test2/TwoTriangles.gltf";
+  std::string filename = "resources/models/test3/triangle_material.gltf";
   if (!load(model, filename.c_str())) {
     std::cout << getexepath() << std::endl;
     std::cout << "File could not be found " << std::endl;
