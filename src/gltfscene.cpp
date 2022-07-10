@@ -72,7 +72,7 @@ void Scene::setWidthAndHeight(int w, int h) {
 
 void Scene::loadAndDrawTriangle(glm::mat4 &view) {
   tinygltf::Model model;
-  std::string filename = "resources/models/test3/triangle_material.gltf";
+  std::string filename = "resources/models/test2/TwoTriangles.gltf";
   if (!load(model, filename.c_str())) {
     std::cout << getexepath() << std::endl;
     std::cout << "File could not be found " << std::endl;
@@ -144,6 +144,44 @@ void Scene::drawMesh(tinygltf::Mesh &mesh, tinygltf::Model &model, glm::mat4 mat
         tinygltf::Accessor indexAccessor = model.accessors[primitive.indices];
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, vbos.at(indexAccessor.bufferView));
         glDrawElements(GL_TRIANGLES, 3, indexAccessor.componentType, BUFFER_OFFSET(indexAccessor.byteOffset));
+      }
+
+      if(primitive.material >= 0) {
+        tinygltf::Material &mat = model.materials[primitive.material];
+        for (auto &value : mat.values) {
+          if (value.first == "baseColorTexture")
+          {
+            //glActiveTexture(GL_TEXTURE0 + 0);
+            //glBindTexture(GL_TEXTURE_2D, this->textures[value.second.TextureIndex()]);
+          }
+          else if (value.first == "metallicRoughnessTexture")
+          {
+            //glActiveTexture(GL_TEXTURE0 + 2);
+            //glBindTexture(GL_TEXTURE_2D, this->textures[value.second.TextureIndex()]);
+          }
+          else if (value.first == "baseColorFactor")
+          {
+            /*
+              std::vector<float> vec = {
+                (float)value.second.number_array[0],
+                (float)value.second.number_array[1],
+                (float)value.second.number_array[2],
+                (float)value.second.number_array[3]
+              };
+              ourShader.setVec4("base_color_factor", &vec[0]);
+            */
+          }
+          else if (value.first == "metallicFactor")
+          {
+            float number = value.second.number_value;
+            ourShader.setFloat("metallic_factor", number);
+          }
+          else if (value.first == "roughnessFactor")
+          {
+            float number = value.second.number_value;
+            ourShader.setFloat("roughnessFactor", number);
+          }
+        }
       }
   }
 }
