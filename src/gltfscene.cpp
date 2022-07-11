@@ -3,6 +3,7 @@
 #define BUFFER_OFFSET(i) ((char *)NULL + (i))
 const float SCR_WIDTH = 3440.0f;
 const float SCR_HEIGHT = 1440.0f;
+std::vector<GLuint> allTextures;
 
 Scene::Scene(Shader &shader): ourShader(shader) {
   width = 800;
@@ -117,7 +118,6 @@ void Scene::drawNode(tinygltf::Model &model, const tinygltf::Node &node, glm::ma
       }
 
       model_mat = glm::rotate(model_mat, glm::radians(0.8f), glm::vec3(0, 1, 0));  // rotate model on y axis
-
       if(node.mesh > -1) {
         tinygltf::Mesh &mesh = model.meshes[node.mesh];
         drawMesh(mesh, model, model_mat, vbos);
@@ -128,6 +128,7 @@ void Scene::drawNode(tinygltf::Model &model, const tinygltf::Node &node, glm::ma
         drawNode(model, child, model_mat, vbos);
       }
 }
+
 
 void Scene::drawMesh(tinygltf::Mesh &mesh, tinygltf::Model &model, glm::mat4 matrix, std::map<int, GLuint> vbos) {
   ourShader.use();
@@ -152,13 +153,17 @@ void Scene::drawMesh(tinygltf::Mesh &mesh, tinygltf::Model &model, glm::mat4 mat
         for (auto &value : mat.values) {
           if (value.first == "baseColorTexture")
           {
-            //glActiveTexture(GL_TEXTURE0 + 0);
-            //glBindTexture(GL_TEXTURE_2D, this->textures[value.second.TextureIndex()]);
+              if (value.second.TextureIndex() > -1) {
+                  glActiveTexture(GL_TEXTURE0 + 0);
+                  glBindTexture(GL_TEXTURE_2D, allTextures[value.second.TextureIndex()]);
+              }
           }
           else if (value.first == "metallicRoughnessTexture")
           {
-            //glActiveTexture(GL_TEXTURE0 + 2);
-            //glBindTexture(GL_TEXTURE_2D, this->textures[value.second.TextureIndex()]);
+              if (value.second.TextureIndex() > -1) {
+                glActiveTexture(GL_TEXTURE0 + 2);
+                glBindTexture(GL_TEXTURE_2D, allTextures[value.second.TextureIndex()]);
+              }
           }
           else if (value.first == "baseColorFactor")
           {
@@ -316,6 +321,7 @@ void Scene::loadTextures(tinygltf::Model &model) {
 
         glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, image.width, image.height, 0,
                      format, type, &image.image.at(0));
+        allTextures.push_back(texid);
       }
     }
 }
