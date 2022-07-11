@@ -3,6 +3,7 @@
 in vec3 camPos;
 in vec3 world_pos;
 in vec3 v_normal;
+in vec4 inputBaseColor;
 in float metallicFactor;
 in float roughFactor;
 out vec4 FragColor;
@@ -18,6 +19,7 @@ struct PBRInfo {
   vec3 F0;
   vec3 N;
   vec3 V;
+  vec3 baseColor;
   float roughness;
   float metallic;
   float NoV;
@@ -114,9 +116,9 @@ vec3 dielectric_brdf(float ior, vec3 baseColor, float perceptualRoughness, float
 vec3 gltfSpecVersion(PointLight light, PBRInfo pbrInfo) {
   float distance = length(light.position.xyz - pbrInfo.WP);
   float attenuation = 1.0 / (distance * distance);
-  vec3 radiance = light.color.xyz * attenuation; 
+  vec3 radiance = light.color.xyz * attenuation;
 
-  vec3 baseColor = vec3(1.0, 0.766, 0.336);
+  vec3 baseColor = pbrInfo.baseColor;
   vec3 L = normalize(light.position - pbrInfo.WP);
   vec3 H = normalize(pbrInfo.V + L);
 
@@ -151,8 +153,9 @@ PBRInfo generatePBRInfo(PBRInfo pbrInfo) {
   pbrInfo.WP = world_pos;
   pbrInfo.albedo = vec3(1.0);
   pbrInfo.metallic = hardCodedMetallicFactor;
+  pbrInfo.baseColor = vec3(inputBaseColor.x, inputBaseColor.y, inputBaseColor.z);
 
-  vec3 fresnel = vec3(0.04); 
+  vec3 fresnel = vec3(0.04);
   fresnel = mix(fresnel, pbrInfo.albedo, vec3(pbrInfo.metallic));
 
   pbrInfo.F0 = fresnel;
@@ -169,14 +172,14 @@ PointLight generatePointLight(PointLight light) {
   return light;
 }
 
-void main()
-{
+void main() {
     PBRInfo pbrInfo;
     PointLight light;
 
+    // baseColor.rgb
     light = generatePointLight(light);
     pbrInfo = generatePBRInfo(pbrInfo);
     vec3 color = gltfSpecVersion(light, pbrInfo);
-    vec3 x = color;
-    FragColor = vec4(x, 1.0f);
+    //pbrInfo.baseColor = vec3(inputBaseColor.x, inputBaseColor.y, inputBaseColor.z);
+    FragColor = vec4(1.0f, 1.0f, 1.0f, 1.0f);
 }

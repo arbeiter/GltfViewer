@@ -137,6 +137,7 @@ void Scene::drawMesh(tinygltf::Mesh &mesh, tinygltf::Model &model, glm::mat4 mat
   ourShader.setMat4("projection", projection);
   glm::vec3 v_position = glm::vec3(projection[3][0], projection[3][1], projection[3][2]);
   ourShader.setVec3("light_pos", v_position);
+  ourShader.setVec4("inutBaseColor", glm::vec4(1.0f, 1.0f, 1.0f, 0.0f));
 
   for (size_t i = 0; i < mesh.primitives.size(); ++i) {
       tinygltf::Primitive primitive = mesh.primitives[i];
@@ -161,15 +162,10 @@ void Scene::drawMesh(tinygltf::Mesh &mesh, tinygltf::Model &model, glm::mat4 mat
           }
           else if (value.first == "baseColorFactor")
           {
-            /*
-              std::vector<float> vec = {
-                (float)value.second.number_array[0],
-                (float)value.second.number_array[1],
-                (float)value.second.number_array[2],
-                (float)value.second.number_array[3]
-              };
-              ourShader.setVec4("base_color_factor", &vec[0]);
-            */
+              ourShader.setVec4("inutBaseColor",
+                  1.0f, 1.0f, 1.0f, 0.0f
+              );
+              std::cout << "Called" << std::endl;
           }
           else if (value.first == "metallicFactor")
           {
@@ -184,6 +180,7 @@ void Scene::drawMesh(tinygltf::Mesh &mesh, tinygltf::Model &model, glm::mat4 mat
         }
       }
   }
+  ourShader.setVec4("inutBaseColor", glm::vec4(1.0f, 1.0f, 1.0f, 0.0f));
 }
 
 void Scene::setView(glm::mat4 &viewParam) {
