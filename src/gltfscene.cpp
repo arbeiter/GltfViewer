@@ -6,7 +6,7 @@ const float SCR_HEIGHT = 1440.0f;
 
 Scene::Scene(Shader &shader): ourShader(shader) {
   width = 800;
-  height = 600; 
+  height = 600;
   float four_d[16];
   projection = glm::make_mat4(four_d);
   view = glm::make_mat4(four_d);
@@ -137,7 +137,7 @@ void Scene::drawMesh(tinygltf::Mesh &mesh, tinygltf::Model &model, glm::mat4 mat
   ourShader.setMat4("projection", projection);
   glm::vec3 v_position = glm::vec3(projection[3][0], projection[3][1], projection[3][2]);
   ourShader.setVec3("light_pos", v_position);
-  ourShader.setVec4("inutBaseColor", glm::vec4(1.0f, 1.0f, 1.0f, 0.0f));
+  //ourShader.setVec3("test_1", 0.0f, 1.0f, 0.0f);
 
   for (size_t i = 0; i < mesh.primitives.size(); ++i) {
       tinygltf::Primitive primitive = mesh.primitives[i];
@@ -162,10 +162,14 @@ void Scene::drawMesh(tinygltf::Mesh &mesh, tinygltf::Model &model, glm::mat4 mat
           }
           else if (value.first == "baseColorFactor")
           {
-              ourShader.setVec4("inutBaseColor",
-                  1.0f, 1.0f, 1.0f, 0.0f
-              );
-              std::cout << "Called" << std::endl;
+              std::vector<float> vec = {
+                (float)value.second.number_array[0],
+                (float)value.second.number_array[1],
+                (float)value.second.number_array[2],
+                (float)value.second.number_array[3]
+              };
+              glm::vec3 test = glm::vec3(vec[0], vec[1], vec[2]);
+              ourShader.setVec3("test_1", test);
           }
           else if (value.first == "metallicFactor")
           {
@@ -180,7 +184,6 @@ void Scene::drawMesh(tinygltf::Mesh &mesh, tinygltf::Model &model, glm::mat4 mat
         }
       }
   }
-  ourShader.setVec4("inutBaseColor", glm::vec4(1.0f, 1.0f, 1.0f, 0.0f));
 }
 
 void Scene::setView(glm::mat4 &viewParam) {

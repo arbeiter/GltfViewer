@@ -27,7 +27,7 @@ class Scene
       void loadAndDrawTriangle(glm::mat4 &view);
       void dbgModel(tinygltf::Model &model);
       void loadTextures(tinygltf::Model &model);
-      std::pair<GLuint, std::map<int, GLuint>> bindCrude(tinygltf::Model &model); 
+      std::pair<GLuint, std::map<int, GLuint>> bindCrude(tinygltf::Model &model);
 
       std::string getexepath();
       void bindModelNodes(std::map<int, GLuint>& vbos, tinygltf::Model &model, tinygltf::Node &node);

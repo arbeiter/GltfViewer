@@ -3,10 +3,11 @@
 in vec3 camPos;
 in vec3 world_pos;
 in vec3 v_normal;
-in vec4 inputBaseColor;
+uniform vec4 inputBaseColor;
 in float metallicFactor;
 in float roughFactor;
-out vec4 FragColor;
+in vec3 test1;
+layout(location = 0) out vec4 FragColor;
 
 struct PointLight {
   vec3 position;
@@ -131,7 +132,7 @@ vec3 gltfSpecVersion(PointLight light, PBRInfo pbrInfo) {
   vec3 F = fresnelSchlick(VoH, pbrInfo.F0);
   float visibility  = (G) / (4 * NoL * NoV);
 
-  vec3 specular_brdf = (vec3(visibility * D) * F); 
+  vec3 specular_brdf = (vec3(visibility * D) * F);
   vec3 metallic = specular_brdf * (baseColor + (1 - baseColor) * pow(1 - int(VoH), 5));
 
   vec3 c_diff = mix(baseColor.rgb, vec3(black), metallic);
@@ -179,7 +180,7 @@ void main() {
     // baseColor.rgb
     light = generatePointLight(light);
     pbrInfo = generatePBRInfo(pbrInfo);
+    pbrInfo.baseColor = test1;
     vec3 color = gltfSpecVersion(light, pbrInfo);
-    //pbrInfo.baseColor = vec3(inputBaseColor.x, inputBaseColor.y, inputBaseColor.z);
-    FragColor = vec4(1.0f, 1.0f, 1.0f, 1.0f);
+    FragColor = vec4(color, 1.0f);
 }

@@ -2,8 +2,8 @@
 layout (location = 0) in vec3 aPos;
 layout (location = 1) in vec3 a_normal;
 
+uniform vec3 test_1;
 in vec3 light_pos;
-in vec4 inutBaseColor;
 uniform mat4 model;
 uniform mat4 view;
 uniform mat4 projection;
@@ -11,12 +11,12 @@ uniform mat4 projection;
 out vec3 v_normal;
 out vec3 world_pos;
 out vec3 camPos;
-out vec4 inputBaseColor;
+out vec3 test1;
 
 void main() {
     world_pos = (model * vec4(aPos, 1)).xyz;
     v_normal = (model * vec4(a_normal, 0)).xyz;
     camPos = light_pos;
-    inputBaseColor = inutBaseColor;
+    test1 = test_1;
     gl_Position = projection * view * model * vec4(aPos, 1.0);
 }

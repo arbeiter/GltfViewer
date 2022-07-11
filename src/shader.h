@@ -66,11 +66,13 @@ public:
         glShaderSource(vertex, 1, &vShaderCode, NULL);
         glCompileShader(vertex);
         checkCompileErrors(vertex, "VERTEX");
+
         // fragment Shader
         fragment = glCreateShader(GL_FRAGMENT_SHADER);
         glShaderSource(fragment, 1, &fShaderCode, NULL);
         glCompileShader(fragment);
         checkCompileErrors(fragment, "FRAGMENT");
+
         // if geometry shader is given, compile geometry shader
         unsigned int geometry;
         if(geometryPath != nullptr)
@@ -125,16 +127,16 @@ public:
     }
     void setVec2(const std::string &name, float x, float y) const
     { 
-        glUniform2f(glGetUniformLocation(ID, name.c_str()), x, y); 
+        glUniform2f(glGetUniformLocation(ID, name.c_str()), x, y);
     }
     // ------------------------------------------------------------------------
     void setVec3(const std::string &name, const glm::vec3 &value) const
-    { 
-        glUniform3fv(glGetUniformLocation(ID, name.c_str()), 1, &value[0]); 
+    {
+        glUniform3fv(glGetUniformLocation(ID, name.c_str()), 1, &value[0]);
     }
     void setVec3(const std::string &name, float x, float y, float z) const
     { 
-        glUniform3f(glGetUniformLocation(ID, name.c_str()), x, y, z); 
+        glUniform3f(glGetUniformLocation(ID, name.c_str()), x, y, z);
     }
     // ------------------------------------------------------------------------
     void setVec4(const std::string &name, const glm::vec4 &value) const
