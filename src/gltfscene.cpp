@@ -73,14 +73,14 @@ void Scene::setWidthAndHeight(int w, int h) {
 
 void Scene::loadAndDrawTriangle(glm::mat4 &view) {
   tinygltf::Model model;
-  std::string filename = "resources/models/test3/triangle_material.gltf";
+  std::string filename = "resources/models/test4/box.gltf";
   if (!load(model, filename.c_str())) {
     std::cout << getexepath() << std::endl;
     std::cout << "File could not be found " << std::endl;
     return;
   }
 
-  //dbgModel(model);
+  dbgModel(model);
   std::pair<GLuint, std::map<int, GLuint>> vaoAndEbos = bindCrude(model);
   drawScene(vaoAndEbos.second, model, view);
 }
@@ -124,6 +124,7 @@ void Scene::drawNode(tinygltf::Model &model, const tinygltf::Node &node, glm::ma
       }
       for(size_t i = 0; i < node.children.size(); ++i)
       {
+        std::cout << "Children " << i << std::endl;
         const tinygltf::Node child = model.nodes[node.children[i]];
         drawNode(model, child, model_mat, vbos);
       }
@@ -138,19 +139,23 @@ void Scene::drawMesh(tinygltf::Mesh &mesh, tinygltf::Model &model, glm::mat4 mat
   ourShader.setMat4("projection", projection);
   glm::vec3 v_position = glm::vec3(projection[3][0], projection[3][1], projection[3][2]);
   ourShader.setVec3("light_pos", v_position);
-  //ourShader.setVec3("test_1", 0.0f, 1.0f, 0.0f);
 
   for (size_t i = 0; i < mesh.primitives.size(); ++i) {
       tinygltf::Primitive primitive = mesh.primitives[i];
+      if(primitive.material >= 0) {
+        tinygltf::Material &mat = model.materials[primitive.material];
+        setMaterials(mat, ourShader);
+      }
       if(primitive.indices > -1) {
         tinygltf::Accessor indexAccessor = model.accessors[primitive.indices];
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, vbos.at(indexAccessor.bufferView));
-        glDrawElements(GL_TRIANGLES, 3, indexAccessor.componentType, BUFFER_OFFSET(indexAccessor.byteOffset));
+        glDrawElements(GL_TRIANGLES, indexAccessor.count, indexAccessor.componentType, BUFFER_OFFSET(indexAccessor.byteOffset));
       }
+  }
+}
 
-      if(primitive.material >= 0) {
-        tinygltf::Material &mat = model.materials[primitive.material];
-        for (auto &value : mat.values) {
+void Scene::setMaterials(tinygltf::Material &material, Shader& ourShader) {
+        for (auto &value : material.values) {
           if (value.first == "baseColorTexture")
           {
               if (value.second.TextureIndex() > -1) {
@@ -187,8 +192,6 @@ void Scene::drawMesh(tinygltf::Mesh &mesh, tinygltf::Model &model, glm::mat4 mat
             ourShader.setFloat("roughFactor", number);
           }
         }
-      }
-  }
 }
 
 void Scene::setView(glm::mat4 &viewParam) {
@@ -260,6 +263,7 @@ void Scene::bindMesh(std::map<int, GLuint>& vbos,
           tinygltf::Accessor accessor = model.accessors[attrib.second];
           int byteStride = accessor.ByteStride(model.bufferViews[accessor.bufferView]);
           glBindBuffer(GL_ARRAY_BUFFER, vbos[accessor.bufferView]);
+
           int size = 1;
           if (accessor.type != TINYGLTF_TYPE_SCALAR) {
             size = accessor.type;
