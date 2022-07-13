@@ -7,6 +7,8 @@ uniform vec4 inputBaseColor;
 in float metallicFactor;
 in float roughFactor;
 in vec3 test1;
+in vec2 texCoord;
+uniform sampler2D samp_tex;
 layout(location = 0) out vec4 FragColor;
 
 struct PointLight {
@@ -147,7 +149,7 @@ PBRInfo generatePBRInfo(PBRInfo pbrInfo) {
   // baseColorFactor
   // metallicFactor
   // roughnessFactor
-  float hardCodedMetallicFactor = metallicFactor;
+  float hardCodedMetallicFactor = 0.0f;
   float roughnessFactor = roughFactor;
   vec3 derived_v = normalize(camPos.xyz - world_pos);
 
@@ -176,11 +178,11 @@ PointLight generatePointLight(PointLight light) {
 void main() {
     PBRInfo pbrInfo;
     PointLight light;
-
-    // baseColor.rgb
     light = generatePointLight(light);
     pbrInfo = generatePBRInfo(pbrInfo);
-    pbrInfo.baseColor = test1;
+    vec3 temp = texture2D(samp_tex, texCoord).rgb;
+    vec3 base_color = vec3(LinearSRGB(temp));
+    pbrInfo.baseColor = vec3(base_color.rgb);
     vec3 color = gltfSpecVersion(light, pbrInfo);
     FragColor = vec4(color, 1.0f);
 }

@@ -34,6 +34,7 @@ void Scene::dbgModel(tinygltf::Model &model) {
   for (auto &mesh : model.meshes) {
     std::cout << "mesh : " << mesh.name << std::endl;
     for (auto &primitive : mesh.primitives) {
+      std::cout << "indices : " << primitive.indices << std::endl;
       const tinygltf::Accessor &indexAccessor =
           model.accessors[primitive.indices];
 
@@ -73,14 +74,15 @@ void Scene::setWidthAndHeight(int w, int h) {
 
 void Scene::loadAndDrawTriangle(glm::mat4 &view) {
   tinygltf::Model model;
-  std::string filename = "resources/models/test4/box.gltf";
+  // FEATURE: LOAD THESE WITH IMGUI
+  std::string filename = "resources/models/test5/BoxTextured.gltf";
   if (!load(model, filename.c_str())) {
     std::cout << getexepath() << std::endl;
     std::cout << "File could not be found " << std::endl;
     return;
   }
 
-  dbgModel(model);
+  //dbgModel(model);
   std::pair<GLuint, std::map<int, GLuint>> vaoAndEbos = bindCrude(model);
   drawScene(vaoAndEbos.second, model, view);
 }
@@ -124,7 +126,6 @@ void Scene::drawNode(tinygltf::Model &model, const tinygltf::Node &node, glm::ma
       }
       for(size_t i = 0; i < node.children.size(); ++i)
       {
-        std::cout << "Children " << i << std::endl;
         const tinygltf::Node child = model.nodes[node.children[i]];
         drawNode(model, child, model_mat, vbos);
       }
@@ -190,6 +191,15 @@ void Scene::setMaterials(tinygltf::Material &material, Shader& ourShader) {
           {
             float number = value.second.number_value;
             ourShader.setFloat("roughFactor", number);
+          }
+        }
+
+        for (auto &value : material.additionalValues)
+        {
+          if (value.first == "normalTexture")
+          {
+            glActiveTexture(GL_TEXTURE0 + 1);
+            glBindTexture(GL_TEXTURE_2D, allTextures[value.second.TextureIndex()]);
           }
         }
 }
@@ -294,21 +304,15 @@ void Scene::loadTextures(tinygltf::Model &model) {
         glGenTextures(1, &texid);
 
         tinygltf::Image &image = model.images[texture.source];
-        // TODO: Text mipmapping
-        /*
-          glGenerateMipmap(GL_TEXTURE_2D);
-          glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, sampler.minFilter);
-          glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, sampler.magFilter);
-         */
 
         glBindTexture(GL_TEXTURE_2D, texid);
         glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
-        glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+        glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+        //TODO: Remove if line above broken: glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
         glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
 
-        // TODO: Fix this
         GLenum format = GL_RGBA;
         if (image.component == 1) {
           format = GL_RED;
@@ -325,6 +329,7 @@ void Scene::loadTextures(tinygltf::Model &model) {
 
         glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, image.width, image.height, 0,
                      format, type, &image.image.at(0));
+        glGenerateMipmap(GL_TEXTURE_2D);
         allTextures.push_back(texid);
       }
     }
