@@ -1,9 +1,6 @@
 #include "gltfscene.h"
 #include <iostream>
 #define BUFFER_OFFSET(i) ((char *)NULL + (i))
-const float SCR_WIDTH = 3440.0f;
-const float SCR_HEIGHT = 1440.0f;
-std::vector<GLuint> allTextures;
 
 Scene::Scene(Shader &shader): ourShader(shader) {
   width = 800;
@@ -42,7 +39,6 @@ void Scene::dbgModel(tinygltf::Model &model) {
                 << indexAccessor.componentType << std::endl;
 
       /*
-      No support for materials yet
       tinygltf::Material &mat = model.materials[primitive.material];
       for (auto &mats : mat.values) {
         std::cout << "mat : " << mats.first.c_str() << std::endl;
@@ -75,7 +71,7 @@ void Scene::setWidthAndHeight(int w, int h) {
 void Scene::loadAndDrawTriangle(glm::mat4 &view) {
   tinygltf::Model model;
   // FEATURE: LOAD THESE WITH IMGUI
-  std::string filename = "resources/models/test5/BoxTextured.gltf";
+  std::string filename = "resources/models/test6/Duck.gltf";
   if (!load(model, filename.c_str())) {
     std::cout << getexepath() << std::endl;
     std::cout << "File could not be found " << std::endl;
@@ -133,6 +129,7 @@ void Scene::drawNode(tinygltf::Model &model, const tinygltf::Node &node, glm::ma
 
 
 void Scene::drawMesh(tinygltf::Mesh &mesh, tinygltf::Model &model, glm::mat4 matrix, std::map<int, GLuint> vbos) {
+
   ourShader.use();
   projection = glm::perspective(glm::radians(45.0f), (float)(width/ height), 0.1f, 4000.0f);
   ourShader.setMat4("model", matrix);
@@ -162,6 +159,10 @@ void Scene::setMaterials(tinygltf::Material &material, Shader& ourShader) {
               if (value.second.TextureIndex() > -1) {
                   glActiveTexture(GL_TEXTURE0 + 0);
                   glBindTexture(GL_TEXTURE_2D, allTextures[value.second.TextureIndex()]);
+                  // set baseColorTexture to true
+                  ourShader.setBool("baseColorAbsent", true);
+              } else {
+                  ourShader.setBool("baseColorAbsent", false);
               }
           }
           else if (value.first == "metallicRoughnessTexture")
@@ -169,6 +170,9 @@ void Scene::setMaterials(tinygltf::Material &material, Shader& ourShader) {
               if (value.second.TextureIndex() > -1) {
                 glActiveTexture(GL_TEXTURE0 + 2);
                 glBindTexture(GL_TEXTURE_2D, allTextures[value.second.TextureIndex()]);
+                ourShader.setBool("metallicAbsent", true);
+              } else {
+                ourShader.setBool("metallicAbsent", false);
               }
           }
           else if (value.first == "baseColorFactor")

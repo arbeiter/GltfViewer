@@ -10,12 +10,20 @@
 #include <gtc/type_ptr.hpp>
 #include <gtx/string_cast.hpp>
 
+struct TextureValues {
+  bool isMetallicTexture;
+  bool isBaseTexture;
+};
+
 class Scene
 {
   private:
       glm::mat4 view;
       int width;
       int height;
+      const float SCR_WIDTH = 3440.0f;
+      const float SCR_HEIGHT = 1440.0f;
+      std::vector<GLuint> allTextures;
 
   public:
       glm::mat4 projection;
@@ -39,4 +47,5 @@ class Scene
       void drawMesh(tinygltf::Mesh &mesh, tinygltf::Model &model, glm::mat4 matrix, std::map<int, GLuint> vbos);
       void setView(glm::mat4 &viewParam);
       void setWidthAndHeight(int w, int h);
+      void setTextureState(Shader& ourShader);
 };

@@ -3,12 +3,15 @@
 in vec3 camPos;
 in vec3 world_pos;
 in vec3 v_normal;
+uniform bool metallicAbsent;
+uniform bool baseColorAbsent;
 uniform vec4 inputBaseColor;
 in float metallicFactor;
 in float roughFactor;
 in vec3 test1;
 in vec2 texCoord;
 uniform sampler2D samp_tex;
+//uniform sampler2D metallic_tex;
 layout(location = 0) out vec4 FragColor;
 
 struct PointLight {
@@ -121,6 +124,7 @@ vec3 gltfSpecVersion(PointLight light, PBRInfo pbrInfo) {
   float attenuation = 1.0 / (distance * distance);
   vec3 radiance = light.color.xyz * attenuation;
 
+  // if metallicRoughnessTexture, set color to value
   vec3 baseColor = pbrInfo.baseColor;
   vec3 L = normalize(light.position - pbrInfo.WP);
   vec3 H = normalize(pbrInfo.V + L);
@@ -149,13 +153,14 @@ PBRInfo generatePBRInfo(PBRInfo pbrInfo) {
   // baseColorFactor
   // metallicFactor
   // roughnessFactor
-  float hardCodedMetallicFactor = 0.0f;
   float roughnessFactor = roughFactor;
   vec3 derived_v = normalize(camPos.xyz - world_pos);
 
   pbrInfo.WP = world_pos;
   pbrInfo.albedo = vec3(1.0);
-  pbrInfo.metallic = hardCodedMetallicFactor;
+  if(metallicAbsent) {
+    pbrInfo.metallic = 0.0f;
+  }
   pbrInfo.baseColor = vec3(inputBaseColor.x, inputBaseColor.y, inputBaseColor.z);
 
   vec3 fresnel = vec3(0.04);
@@ -180,9 +185,13 @@ void main() {
     PointLight light;
     light = generatePointLight(light);
     pbrInfo = generatePBRInfo(pbrInfo);
-    vec3 temp = texture2D(samp_tex, texCoord).rgb;
-    vec3 base_color = vec3(LinearSRGB(temp));
-    pbrInfo.baseColor = vec3(base_color.rgb);
+    if(baseColorAbsent) {
+      vec3 temp = texture2D(samp_tex, texCoord).rgb;
+      vec3 base_color = vec3(LinearSRGB(temp));
+      pbrInfo.baseColor = vec3(base_color.rgb);
+    } else {
+      pbrInfo.baseColor = test1;
+    }
     vec3 color = gltfSpecVersion(light, pbrInfo);
     FragColor = vec4(color, 1.0f);
 }
