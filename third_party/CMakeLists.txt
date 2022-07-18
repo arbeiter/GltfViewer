@@ -1,3 +1,4 @@
+
 add_library(stb_image INTERFACE)
 target_include_directories(stb_image INTERFACE stb_image)
 
@@ -17,3 +18,4 @@ target_include_directories(tinygltf PUBLIC
         stb_image
         json
 )
+add_subdirectory(glad/)
