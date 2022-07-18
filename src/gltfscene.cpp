@@ -71,7 +71,7 @@ void Scene::setWidthAndHeight(int w, int h) {
 void Scene::loadAndDrawTriangle(glm::mat4 &view) {
   tinygltf::Model model;
   // FEATURE: LOAD THESE WITH IMGUI
-  std::string filename = "resources/models/test6/Duck.gltf";
+  std::string filename = "resources/models/test8/BoxVertexColors.gltf";
   if (!loadGltf(model, filename.c_str())) {
     std::cout << getexepath() << std::endl;
     std::cout << "File could not be found " << std::endl;
@@ -81,7 +81,6 @@ void Scene::loadAndDrawTriangle(glm::mat4 &view) {
   vaoAndEbos = bindCrude(model);
   internalModel = model;
 }
-
 
 void Scene::drawNode(tinygltf::Model &model, const tinygltf::Node &node, glm::mat4 matrix, std::map<int, GLuint> vbos) {
       glm::mat4 model_mat = matrix;
@@ -286,6 +285,7 @@ void Scene::bindMesh(std::map<int, GLuint>& vbos,
           if (attrib.first.compare("POSITION") == 0) vaa = 0;
           if (attrib.first.compare("NORMAL") == 0) vaa = 1;
           if (attrib.first.compare("TEXCOORD_0") == 0) vaa = 2;
+          //if (attrib.first.compare("COLOR_0") == 0) vaa = 3;
           if(vaa > -1) {
               glEnableVertexAttribArray(vaa);
               glVertexAttribPointer(vaa, size, accessor.componentType,

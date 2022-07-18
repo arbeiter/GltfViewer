@@ -1,11 +1,11 @@
-add_executable(${PROJECT_NAME} 
+add_executable(${PROJECT_NAME}
   arcball.h
   arcball.cpp
   shader.h
-  main.cpp 
-  window.h 
+  main.cpp
+  window.h
   window.cpp
-  gltfscene.cpp 
+  gltfscene.cpp
   gltfscene.h
   utils.hpp)
 
