@@ -23,6 +23,9 @@ class Scene
       int height;
       const float SCR_WIDTH = 3440.0f;
       const float SCR_HEIGHT = 1440.0f;
+
+      tinygltf::Model internalModel;
+      std::pair<GLuint, std::map<int, GLuint>> vaoAndEbos;
       std::vector<GLuint> allTextures;
 
   public:
@@ -31,7 +34,7 @@ class Scene
 
       Scene(Shader &ourShader);
 
-      bool load(tinygltf::Model &model, const char* filename);
+      bool loadGltf(tinygltf::Model &model, const char* filename);
       void loadAndDrawTriangle(glm::mat4 &view);
       void dbgModel(tinygltf::Model &model);
       void loadTextures(tinygltf::Model &model);
@@ -42,10 +45,9 @@ class Scene
       void bindMesh(std::map<int, GLuint>& vbos, tinygltf::Model &model, tinygltf::Mesh &mesh);
 
       void setMaterials(tinygltf::Material &material, Shader& ourShader);
-      void drawScene(const std::map<int, GLuint>& vbos, tinygltf::Model &model, glm::mat4 &viewParam);
+      void drawScene(glm::mat4 &viewParam);
       void drawNode(tinygltf::Model &model, const tinygltf::Node &node, glm::mat4 matrix, std::map<int, GLuint> vbos);
       void drawMesh(tinygltf::Mesh &mesh, tinygltf::Model &model, glm::mat4 matrix, std::map<int, GLuint> vbos);
       void setView(glm::mat4 &viewParam);
       void setWidthAndHeight(int w, int h);
-      void setTextureState(Shader& ourShader);
 };

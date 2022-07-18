@@ -17,7 +17,7 @@ std::string Scene::getexepath()
   return std::string( result, (count > 0) ? count : 0 );
 }
 
-bool Scene::load(tinygltf::Model &model, const char *filename) {
+bool Scene::loadGltf(tinygltf::Model &model, const char *filename) {
   tinygltf::TinyGLTF loader;
   std::string err;
   std::string warn;
@@ -72,16 +72,16 @@ void Scene::loadAndDrawTriangle(glm::mat4 &view) {
   tinygltf::Model model;
   // FEATURE: LOAD THESE WITH IMGUI
   std::string filename = "resources/models/test6/Duck.gltf";
-  if (!load(model, filename.c_str())) {
+  if (!loadGltf(model, filename.c_str())) {
     std::cout << getexepath() << std::endl;
     std::cout << "File could not be found " << std::endl;
     return;
   }
 
-  //dbgModel(model);
-  std::pair<GLuint, std::map<int, GLuint>> vaoAndEbos = bindCrude(model);
-  drawScene(vaoAndEbos.second, model, view);
+  vaoAndEbos = bindCrude(model);
+  internalModel = model;
 }
+
 
 void Scene::drawNode(tinygltf::Model &model, const tinygltf::Node &node, glm::mat4 matrix, std::map<int, GLuint> vbos) {
       glm::mat4 model_mat = matrix;
@@ -153,59 +153,59 @@ void Scene::drawMesh(tinygltf::Mesh &mesh, tinygltf::Model &model, glm::mat4 mat
 }
 
 void Scene::setMaterials(tinygltf::Material &material, Shader& ourShader) {
-        for (auto &value : material.values) {
-          if (value.first == "baseColorTexture")
-          {
-              if (value.second.TextureIndex() > -1) {
-                  glActiveTexture(GL_TEXTURE0 + 0);
-                  glBindTexture(GL_TEXTURE_2D, allTextures[value.second.TextureIndex()]);
-                  // set baseColorTexture to true
-                  ourShader.setBool("baseColorAbsent", true);
-              } else {
-                  ourShader.setBool("baseColorAbsent", false);
-              }
-          }
-          else if (value.first == "metallicRoughnessTexture")
-          {
-              if (value.second.TextureIndex() > -1) {
-                glActiveTexture(GL_TEXTURE0 + 2);
-                glBindTexture(GL_TEXTURE_2D, allTextures[value.second.TextureIndex()]);
-                ourShader.setBool("metallicAbsent", true);
-              } else {
-                ourShader.setBool("metallicAbsent", false);
-              }
-          }
-          else if (value.first == "baseColorFactor")
-          {
-              std::vector<float> vec = {
-                (float)value.second.number_array[0],
-                (float)value.second.number_array[1],
-                (float)value.second.number_array[2],
-                (float)value.second.number_array[3]
-              };
-              glm::vec3 test = glm::vec3(vec[0], vec[1], vec[2]);
-              ourShader.setVec3("test_1", test);
-          }
-          else if (value.first == "metallicFactor")
-          {
-            float number = value.second.number_value;
-            ourShader.setFloat("metallicFactor", number);
-          }
-          else if (value.first == "roughFactor")
-          {
-            float number = value.second.number_value;
-            ourShader.setFloat("roughFactor", number);
-          }
-        }
-
-        for (auto &value : material.additionalValues)
-        {
-          if (value.first == "normalTexture")
-          {
-            glActiveTexture(GL_TEXTURE0 + 1);
+  for (auto &value : material.values) {
+    if (value.first == "baseColorTexture")
+    {
+        if (value.second.TextureIndex() > -1) {
+            glActiveTexture(GL_TEXTURE0 + 0);
             glBindTexture(GL_TEXTURE_2D, allTextures[value.second.TextureIndex()]);
-          }
+            // set baseColorTexture to true
+            ourShader.setBool("baseColorAbsent", true);
+        } else {
+            ourShader.setBool("baseColorAbsent", false);
         }
+    }
+    else if (value.first == "metallicRoughnessTexture")
+    {
+        if (value.second.TextureIndex() > -1) {
+          glActiveTexture(GL_TEXTURE0 + 2);
+          glBindTexture(GL_TEXTURE_2D, allTextures[value.second.TextureIndex()]);
+          ourShader.setBool("metallicAbsent", true);
+        } else {
+          ourShader.setBool("metallicAbsent", false);
+        }
+    }
+    else if (value.first == "baseColorFactor")
+    {
+        std::vector<float> vec = {
+          (float)value.second.number_array[0],
+          (float)value.second.number_array[1],
+          (float)value.second.number_array[2],
+          (float)value.second.number_array[3]
+        };
+        glm::vec3 test = glm::vec3(vec[0], vec[1], vec[2]);
+        ourShader.setVec3("test_1", test);
+    }
+    else if (value.first == "metallicFactor")
+    {
+      float number = value.second.number_value;
+      ourShader.setFloat("metallicFactor", number);
+    }
+    else if (value.first == "roughFactor")
+    {
+      float number = value.second.number_value;
+      ourShader.setFloat("roughFactor", number);
+    }
+  }
+
+  for (auto &value : material.additionalValues)
+  {
+    if (value.first == "normalTexture")
+    {
+      glActiveTexture(GL_TEXTURE0 + 1);
+      glBindTexture(GL_TEXTURE_2D, allTextures[value.second.TextureIndex()]);
+    }
+  }
 }
 
 void Scene::setView(glm::mat4 &viewParam) {
@@ -213,13 +213,13 @@ void Scene::setView(glm::mat4 &viewParam) {
   view = viewParam;
 }
 
-void Scene::drawScene(const std::map<int, GLuint>& vbos, tinygltf::Model &model, glm::mat4 &viewParam) {
+void Scene::drawScene(glm::mat4 &viewParam) {
   setView(viewParam);
   glm::mat4 model_mat(1.0f);
-  for (const tinygltf::Scene& scene : model.scenes) {
+  for (const tinygltf::Scene& scene : internalModel.scenes) {
     for(size_t i = 0; i < scene.nodes.size(); i++) {
-      const tinygltf::Node &node = model.nodes[scene.nodes[i]];
-      drawNode(model, node, model_mat, vbos);
+      const tinygltf::Node &node = internalModel.nodes[scene.nodes[i]];
+      drawNode(internalModel, node, model_mat, vaoAndEbos.second);
     }
   }
 }

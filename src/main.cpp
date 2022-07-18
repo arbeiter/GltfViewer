@@ -31,6 +31,7 @@ void displayLoop(Window &window) {
     glDepthFunc(GL_LESS);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     glEnable(GL_BLEND);
+    scene.loadAndDrawTriangle(view);
 
     while (!glfwWindowShouldClose(window.window))
     {
@@ -40,7 +41,7 @@ void displayLoop(Window &window) {
         glEnable(GL_DEPTH_TEST);
         view = camera.transform();
         scene.setWidthAndHeight(curr_width, curr_height);
-        scene.loadAndDrawTriangle(view);
+        scene.drawScene(view);
         glfwSwapBuffers(window.window);
         glfwPollEvents();
     }
