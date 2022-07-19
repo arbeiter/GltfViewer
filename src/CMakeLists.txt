@@ -19,6 +19,7 @@ set(LIBS glm)
 set(LIBS stb_image)
 set(LIBS json)
 set(LIBS tinygltf)
+set(LIBS imgui)
 
 target_link_libraries(${PROJECT_NAME} glad)
-target_link_libraries(${PROJECT_NAME} glm stb_image json glfw tinygltf ${LIBS} ${CMAKE_DL_LIBS})
+target_link_libraries(${PROJECT_NAME} glm stb_image json glfw tinygltf imgui ${LIBS} ${CMAKE_DL_LIBS})

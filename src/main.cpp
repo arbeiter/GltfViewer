@@ -7,6 +7,10 @@
 #include <vector>
 #include "arcball.h"
 #include "gltfscene.h"
+#include "imgui.h"
+// TODO: Backends should be imgui/backends. Fix this
+#include "backends/imgui_impl_glfw.h"
+#include "backends/imgui_impl_opengl3.h"
 
 int curr_width = 800;
 int curr_height = 600;
@@ -21,6 +25,9 @@ ArcballCamera camera(eye, center, up);
 void mouse_callback(GLFWwindow* window, double xpos, double ypos);
 void processInput(GLFWwindow *window);
 
+void initImgUi(Window &window);
+void drawGui();
+
 void displayLoop(Window &window) {
     Shader ourShader("shader.vert", "shader.frag"); // you can name your shader files however you like
     std::string shader_vert_path = "shader.vert";
@@ -33,18 +40,50 @@ void displayLoop(Window &window) {
     glEnable(GL_BLEND);
     scene.loadAndDrawTriangle(view);
 
+    // Variables to be changed in the ImGUI window
+    bool drawTriangle = true;
+    float size = 1.0f;
+    float color[4] = { 0.8f, 0.3f, 0.02f, 1.0f };
+
     while (!glfwWindowShouldClose(window.window))
     {
+
         processInput(window.window);
         glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         glEnable(GL_DEPTH_TEST);
+
+        // Draw scene
         view = camera.transform();
         scene.setWidthAndHeight(curr_width, curr_height);
         scene.drawScene(view);
+
+        drawGui();
         glfwSwapBuffers(window.window);
         glfwPollEvents();
     }
+
+
+    ImGui_ImplOpenGL3_Shutdown();
+    ImGui_ImplGlfw_Shutdown();
+    ImGui::DestroyContext();
+}
+
+void drawGui() {
+    /// INSIDE RENDER LOOP
+    // Tell OpenGL a new frame is about to begin
+    ImGui_ImplOpenGL3_NewFrame();
+    ImGui_ImplGlfw_NewFrame();
+    ImGui::NewFrame();
+
+    // ImGUI window creation
+    ImGui::Begin("My name is window, ImGUI window");
+    ImGui::Text("Hello there adventurer!");
+    ImGui::End();
+
+    // Renders the ImGUI elements
+    ImGui::Render();
+    ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 }
 
 void processInput(GLFWwindow *window)
@@ -100,27 +139,38 @@ void framebuffer_size_callback(GLFWwindow* window, int width, int height)
     glViewport(0, 0, width, height);
 }
 
+void initImgUi(Window &window) {
+  // Initialize ImGUI
+  IMGUI_CHECKVERSION();
+  ImGui::CreateContext();
+  ImGuiIO& io = ImGui::GetIO(); (void)io;
+  ImGui::StyleColorsDark();
+  ImGui_ImplGlfw_InitForOpenGL(window.window, true);
+  ImGui_ImplOpenGL3_Init("#version 330");
+}
+
 int main()
 {
-    glfwInit();
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 6);
-    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+  glfwInit();
+  glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
+  glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 6);
+  glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
-    Window window = Window(800, 600, "TinyGLTF basic example");
-    glfwMakeContextCurrent(window.window);
-    glfwSetCursorPosCallback(window.window, mouse_callback);
-    glfwSetScrollCallback(window.window, scroll_callback);
-    glfwSetWindowSizeCallback(window.window, glfwSetWindowSizeCallback);
-    glfwSetFramebufferSizeCallback(window.window, framebuffer_size_callback);
+  Window window = Window(800, 600, "TinyGLTF basic example");
+  glfwMakeContextCurrent(window.window);
+  glfwSetCursorPosCallback(window.window, mouse_callback);
+  glfwSetScrollCallback(window.window, scroll_callback);
+  glfwSetWindowSizeCallback(window.window, glfwSetWindowSizeCallback);
+  glfwSetFramebufferSizeCallback(window.window, framebuffer_size_callback);
 
-    if(!gladLoadGL((GLADloadfunc) glfwGetProcAddress))
-    {
-        std::cout << "Failed to initialize GLAD" << std::endl;
-        return -1;
-    }
+  if(!gladLoadGL((GLADloadfunc) glfwGetProcAddress))
+  {
+      std::cout << "Failed to initialize GLAD" << std::endl;
+      return -1;
+  }
 
-    displayLoop(window);
-    glfwTerminate();
-    return 0;
+  initImgUi(window);
+  displayLoop(window);
+  glfwTerminate();
+  return 0;
 }

@@ -8,13 +8,104 @@
   - Numbers in a vector
   - Feed number into Loader
 
-#### Cmake
-Fetch ImGUI
-https://github.com/JulesFouchy/p6/blob/6c4ab661de9a27223626a975e84ba67d55731ecc/CMakeLists.txt
-##### Experiments
+### Checklist before git push
 
-###### Attempt2
+- Add Imgui to circle between all models
+- Colored vertices test
+- First person camera
+  - Flyby camera
+- Figure out how to input a metallic texture
+- Test Non-PBR materials
 
+### Done
+- Integrate Imgui
+- Test Duck.gltf
+- Input entry modification
+- Set default values if not present to the frag shader
+  - Test1
+  - Metallic etc.
+- Test 4 and 5 one after the other
+- Test Sponza first
+
+### Notes
+
+#### IMGUI Static linking notes
+###### Move glad to third_party and compile
+
+###### Option 0: Link as interface
+
+```
+add_library(imgui INTERFACE)
+set(IMGUI_DIR ${CMAKE_CURRENT_SOURCE_DIR}/imgui)
+set(IMGUI_SRC
+${IMGUI_DIR}/imgui.cpp
+${IMGUI_DIR}/imgui_demo.cpp
+${IMGUI_DIR}/imgui_draw.cpp
+${IMGUI_DIR}/imgui_tables.cpp
+${IMGUI_DIR}/imgui_widgets.cpp
+${IMGUI_DIR}/backends/imgui_impl_opengl3.cpp
+${IMGUI_DIR}/backends/imgui_impl_opengl3.h
+${IMGUI_DIR}/backends/imgui_impl_glfw.cpp
+${IMGUI_DIR}/backends/imgui_impl_glfw.h
+)
+target_sources(imgui INTERFACE ${IMGUI_SRC})
+target_include_directories(imgui INTERFACE ${IMGUI_DIR})
+```
+
+###### Option 1: Statically link IMGUI
+
+In third_party
+```
+set(IMGUI_DIR imgui)
+add_library(imgui STATIC)
+add_library(imgui::imgui ALIAS imgui)
+target_sources(imgui
+  PRIVATE
+    ##### Main Files #####
+    ${IMGUI_DIR}/imgui.cpp
+    ${IMGUI_DIR}/imgui_demo.cpp
+    ${IMGUI_DIR}/imgui_draw.cpp
+    ${IMGUI_DIR}/imgui_tables.cpp
+    ${IMGUI_DIR}/imgui_widgets.cpp
+    ${IMGUI_DIR}/backends/imgui_impl_glfw.cpp
+    ${IMGUI_DIR}/backends/imgui_impl_opengl3.cpp)
+  target_include_directories(imgui
+    PUBLIC
+      ${IMGUI_DIR}
+  )
+  target_link_libraries(imgui
+    PUBLIC
+      Glad
+      glfw::glfw
+  )
+```
+
+```
+target_link_libraries(${PROJECT_NAME}
+  PRIVATE
+    renderer::backend
+    imgui::imgui
+    glfw::glfw
+)
+```
+
+```
+    set(IMGUI_INCLUDE_DIR ${imgui_SOURCE_DIR}/)
+    file(GLOB IMGUI_SOURCES ${imgui_SOURCE_DIR}/*.cpp)
+    file(GLOB IMGUI_HEADERS ${imgui_SOURCE_DIR}/*.h)
+    add_library(imgui STATIC ${IMGUI_SOURCES}
+                             ${IMGUI_SOURCES}
+                             ${imgui_SOURCE_DIR}/examples/imgui_impl_glfw.cpp
+                             ${imgui_SOURCE_DIR}/examples/imgui_impl_opengl3.cpp)
+    add_definitions(-DIMGUI_IMPL_OPENGL_LOADER_GLAD)
+    target_include_directories(imgui PUBLIC ${IMGUI_INCLUDE_DIR}
+                                            ${OPENGL_INCLUDE_DIR}
+                                            ${GLFW_INCLUDE_DIR}
+                                            ${GLAD_INCLUDE_DIR})
+    target_link_libraries(imgui ${OPENGL_LIBRARIES} glfw glad)
+endif ()
+
+```
 
 ###### Failed Attempt 1:
 
@@ -48,86 +139,76 @@ https://github.com/JulesFouchy/p6/blob/6c4ab661de9a27223626a975e84ba67d55731ecc/
   )
   ```
 
+  Other:
+  ```
+    add_library(
+            imgui
+            imgui/imgui.cpp
+            imgui/imgui.h
+            imgui/imgui_demo.cpp
+            imgui/imgui_draw.cpp
+            imgui/imgui_widgets.cpp
+            imgui/imgui_tables.cpp
+            imgui/imgui_internal.h
+            imgui/imstb_rectpack.h
+            imgui/imstb_textedit.h
+            imgui/imstb_truetype.h
+            imgui/backends/imgui_impl_opengl3.cpp
+            imgui/backends/imgui_impl_opengl3.h
+            imgui/backends/imgui_impl_glfw.cpp
+            imgui/backends/imgui_impl_glfw.h
+    )
 
-### Loading imgui
+    target_link_libraries(imgui PUBLIC glfw glad)
 
+    SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DIMGUI_IMPL_OPENGL_LOADER_GLAD2")
 
-```
-#include "examples/imgui_impl_glfw.h"
-#include "examples/imgui_impl_opengl3.h"
-#if defined(IMGUI_IMPL_OPENGL_LOADER_GL3W)
-#include <GL/gl3w.h> // Initialize with gl3wInit()
-#elif defined(IMGUI_IMPL_OPENGL_LOADER_GLEW)
-#include <GL/glew.h> // Initialize with glewInit()
-#elif defined(IMGUI_IMPL_OPENGL_LOADER_GLAD)
-#include <glad/glad.h> // Initialize with gladLoadGL()
-#elif defined(IMGUI_IMPL_OPENGL_LOADER_GLBINDING2)
-#define GLFW_INCLUDE_NONE // GLFW including OpenGL headers causes ambiguity or
-                          // multiple definition errors.
-#include <glbinding/Binding.h> // Initialize with glbinding::Binding::initialize()
-#include <glbinding/gl/gl.h>
-```
+    target_include_directories(
+            imgui
+            PUBLIC
+            imgui
+            imgui/backends
+    )
+  ```
+  
+  Static Link:
+  ```
+  set( IMGUI_SRC_DIR ${THIRDPARTY_DIR}/imgui )
+  set( IMGUI_PUBLIC_HEADERS ${IMGUI_SRC_DIR}/imgui.h )
+  set( IMGUI_SOURCES
+      ${IMGUI_SRC_DIR}/imgui.cpp
+      ${IMGUI_SRC_DIR}/imgui_draw.cpp
+      ${IMGUI_SRC_DIR}/imgui_demo.cpp
+      ${IMGUI_SRC_DIR}/imgui_widgets.cpp
+      ${THIRDPARTY_DIR}/glad/glad.c )
+  add_library( imgui STATIC ${IMGUI_SOURCES} )
+  target_include_directories( imgui PRIVATE ${THIRDPARTY_DIR} ${IMGUI_SRC_DIR} )
+  set( MAIN_APP_SOURCES
+      ${CMAKE_CURRENT_LIST_DIR}/src/main.cpp
+      ${CMAKE_CURRENT_LIST_DIR}/src/imgui_impl/opengl3.cpp
+      ${CMAKE_CURRENT_LIST_DIR}/src/imgui_impl/glfw.cpp
+      ${CMAKE_CURRENT_LIST_DIR}/src/imgui_impl/fonts.cpp )
+  ```
 
-#### Code
-
-// Outside render loop
-// Initialize ImGUI
-IMGUI_CHECKVERSION();
-ImGui::CreateContext();
-ImGuiIO& io = ImGui::GetIO(); (void)io;
-ImGui::StyleColorsDark();
-ImGui_ImplGlfw_InitForOpenGL(window, true);
-ImGui_ImplOpenGL3_Init("#version 330");
-
-// Variables to be changed in the ImGUI window
-bool drawTriangle = true;
-float size = 1.0f;
-float color[4] = { 0.8f, 0.3f, 0.02f, 1.0f };
-
-/// INSIDE RENDER LOOP
-// Tell OpenGL a new frame is about to begin
-ImGui_ImplOpenGL3_NewFrame();
-ImGui_ImplGlfw_NewFrame();
-ImGui::NewFrame();
-
-// ImGUI window creation
-ImGui::Begin("My name is window, ImGUI window");
-// Text that appears in the window
-ImGui::Text("Hello there adventurer!");
-// Checkbox that appears in the window
-ImGui::Checkbox("Draw Triangle", &drawTriangle);
-// Slider that appears in the window
-ImGui::SliderFloat("Size", &size, 0.5f, 2.0f);
-// Fancy color editor that appears in the window
-ImGui::ColorEdit4("Color", color);
-// Ends the window
-ImGui::End();
-
-// Renders the ImGUI elements
-ImGui::Render();
-ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
-
-// Cleanup
-ImGui_ImplOpenGL3_Shutdown();
-ImGui_ImplGlfw_Shutdown();
-ImGui::DestroyContext();
-
-### Checklist before git push
-
-- Add Imgui to circle between all models
-- Colored vertices test
-- First person camera
-  - Flyby camera
-- Figure out how to input a metallic texture
-- Test Non-PBR materials
-
-### Done
-- Test Duck.gltf
-- Input entry modification
-- Set default values if not present to the frag shader
-  - Test1
-  - Metallic etc.
-- Test 4 and 5 one after the other
-- Test Sponza first
-
-### Notes
+  https://alandefreitas.github.io/moderncpp/guis/imgui/
+  ```
+  FetchContent_Declare(
+          imgui
+          GIT_REPOSITORY https://github.com/ocornut/imgui.git
+          GIT_TAG v1.77
+  )
+  FetchContent_GetProperties(imgui)
+  if (NOT imgui_POPULATED)
+      FetchContent_Populate(imgui)
+      set(IMGUI_INCLUDE_DIR ${imgui_SOURCE_DIR}/)
+      file(GLOB IMGUI_SOURCES ${imgui_SOURCE_DIR}/*.cpp)
+      file(GLOB IMGUI_HEADERS ${imgui_SOURCE_DIR}/*.h)
+      add_library(imgui STATIC ${IMGUI_SOURCES}
+                               ${IMGUI_SOURCES}
+                               ${imgui_SOURCE_DIR}/examples/imgui_impl_glfw.cpp
+                               ${imgui_SOURCE_DIR}/examples/imgui_impl_opengl3.cpp)
+      add_definitions(-DIMGUI_IMPL_OPENGL_LOADER_GLAD)
+      target_include_directories(imgui PUBLIC ${IMGUI_INCLUDE_DIR} ${OPENGL_INCLUDE_DIR} ${GLFW_INCLUDE_DIR} ${GLAD_INCLUDE_DIR})
+      target_link_libraries(imgui ${OPENGL_LIBRARIES} glfw glad)
+  endif ()
+  ```
