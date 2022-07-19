@@ -68,13 +68,16 @@ void Scene::setWidthAndHeight(int w, int h) {
   height = h;
 }
 
-void Scene::loadAndDrawTriangle(glm::mat4 &view) {
+void Scene::loadModel(glm::mat4 &view, int elem) {
   tinygltf::Model model;
-  // FEATURE: LOAD THESE WITH IMGUI
-  std::string filename = "resources/models/test8/BoxVertexColors.gltf";
+  std::string modelNumber = std::to_string(elem);
+  std::string folderName = "";
+
+  std::string filename = "resources/models/test" + modelNumber + "/" + modelNumber + ".gltf";
+  std::cout << "Attempting to load " << filename << " " << std::endl;
   if (!loadGltf(model, filename.c_str())) {
     std::cout << getexepath() << std::endl;
-    std::cout << "File could not be found " << std::endl;
+    std::cout << "File could not be found " << filename << " " << std::endl;
     return;
   }
 

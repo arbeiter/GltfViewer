@@ -27,15 +27,14 @@ class Scene
       tinygltf::Model internalModel;
       std::pair<GLuint, std::map<int, GLuint>> vaoAndEbos;
       std::vector<GLuint> allTextures;
+      bool loadGltf(tinygltf::Model &model, const char* filename);
 
   public:
       glm::mat4 projection;
       Shader ourShader;
 
       Scene(Shader &ourShader);
-
-      bool loadGltf(tinygltf::Model &model, const char* filename);
-      void loadAndDrawTriangle(glm::mat4 &view);
+      void loadModel(glm::mat4 &view, int modelNumber);
       void dbgModel(tinygltf::Model &model);
       void loadTextures(tinygltf::Model &model);
       std::pair<GLuint, std::map<int, GLuint>> bindCrude(tinygltf::Model &model);

@@ -24,9 +24,10 @@ float zoom_amount = 1;
 ArcballCamera camera(eye, center, up);
 void mouse_callback(GLFWwindow* window, double xpos, double ypos);
 void processInput(GLFWwindow *window);
+int ShowStyleSelector(const char* label, int &selectedLabel);
 
 void initImgUi(Window &window);
-void drawGui();
+int drawGui(int &selectedModel);
 
 void displayLoop(Window &window) {
     Shader ourShader("shader.vert", "shader.frag"); // you can name your shader files however you like
@@ -38,7 +39,8 @@ void displayLoop(Window &window) {
     glDepthFunc(GL_LESS);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     glEnable(GL_BLEND);
-    scene.loadAndDrawTriangle(view);
+    scene.loadModel(view, 1);
+    int selectedModel = 1;
 
     // Variables to be changed in the ImGUI window
     bool drawTriangle = true;
@@ -47,7 +49,6 @@ void displayLoop(Window &window) {
 
     while (!glfwWindowShouldClose(window.window))
     {
-
         processInput(window.window);
         glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -56,20 +57,25 @@ void displayLoop(Window &window) {
         // Draw scene
         view = camera.transform();
         scene.setWidthAndHeight(curr_width, curr_height);
+        int currentModel = drawGui(selectedModel);
+        if(currentModel != selectedModel) {
+          selectedModel = currentModel;
+          std::cout << " Loading selected Model " << selectedModel << " " << currentModel << std::endl;
+          scene.loadModel(view, selectedModel);
+        }
+
         scene.drawScene(view);
 
-        drawGui();
         glfwSwapBuffers(window.window);
         glfwPollEvents();
     }
-
 
     ImGui_ImplOpenGL3_Shutdown();
     ImGui_ImplGlfw_Shutdown();
     ImGui::DestroyContext();
 }
 
-void drawGui() {
+int drawGui(int &selectedModel) {
     /// INSIDE RENDER LOOP
     // Tell OpenGL a new frame is about to begin
     ImGui_ImplOpenGL3_NewFrame();
@@ -77,13 +83,14 @@ void drawGui() {
     ImGui::NewFrame();
 
     // ImGUI window creation
-    ImGui::Begin("My name is window, ImGUI window");
-    ImGui::Text("Hello there adventurer!");
+    ImGui::Begin("FilePicker");
+    int file = ShowStyleSelector("Pick File", selectedModel);
     ImGui::End();
 
     // Renders the ImGUI elements
     ImGui::Render();
     ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+    return file;
 }
 
 void processInput(GLFWwindow *window)
@@ -147,6 +154,22 @@ void initImgUi(Window &window) {
   ImGui::StyleColorsDark();
   ImGui_ImplGlfw_InitForOpenGL(window.window, true);
   ImGui_ImplOpenGL3_Init("#version 330");
+}
+
+int ShowStyleSelector(const char* label, int &model_number)
+{
+    if (ImGui::Combo(label, &model_number, "A\0B\0C\0"))
+    {
+        switch (model_number)
+        {
+          case 'A': model_number = 0; break;
+          case 'B': model_number = 1; break;
+          case 'C': model_number = 2; break;
+        }
+        std::cout << "MODEL NUMBER " << model_number << std::endl;
+        return model_number + 1;
+    }
+    return model_number;
 }
 
 int main()
