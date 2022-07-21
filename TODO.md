@@ -1,17 +1,14 @@
-### IMGUI
+### TODO:
+- Figure out how to make multiple textures work
+- Node hierarchy broken?
 
-#### TODO
-- 1: Text
-  - CMake
-  - GLFW-IMGui-Opengl
-- 2: FilePicker
-  - Numbers in a vector
-  - Feed number into Loader
+### Bugs
+- Clear texture when switching between filetypes
+- Colored vertices: Figure out how to reset stuff when its not set
 
 ### Checklist before git push
 
 - Add Imgui to circle between all models
-- Colored vertices test
 - First person camera
   - Flyby camera
 - Figure out how to input a metallic texture
@@ -160,9 +157,7 @@ endif ()
     )
 
     target_link_libraries(imgui PUBLIC glfw glad)
-
     SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DIMGUI_IMPL_OPENGL_LOADER_GLAD2")
-
     target_include_directories(
             imgui
             PUBLIC
@@ -170,7 +165,7 @@ endif ()
             imgui/backends
     )
   ```
-  
+
   Static Link:
   ```
   set( IMGUI_SRC_DIR ${THIRDPARTY_DIR}/imgui )

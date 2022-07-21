@@ -1,17 +1,19 @@
 #version 330 core
 
-in vec3 camPos;
-in vec3 world_pos;
-in vec3 v_normal;
-uniform bool metallicAbsent;
-uniform bool baseColorAbsent;
-uniform vec4 inputBaseColor;
 in float metallicFactor;
 in float roughFactor;
 in vec3 test1;
 in vec2 texCoord;
+in vec3 camPos;
+in vec3 world_pos;
+in vec3 v_normal;
+in vec3 v_color;
+
+uniform bool metallicAbsent;
+uniform bool baseColorAbsent;
+uniform vec4 inputBaseColor;
 uniform sampler2D samp_tex;
-//uniform sampler2D metallic_tex;
+
 layout(location = 0) out vec4 FragColor;
 
 struct PointLight {
@@ -194,4 +196,8 @@ void main() {
     }
     vec3 color = gltfSpecVersion(light, pbrInfo);
     FragColor = vec4(color, 1.0f);
+    /*
+    if(v_color != vec3(0.0f)) {
+      FragColor *= vec4(v_color, 1.0f);
+    }*/
 }

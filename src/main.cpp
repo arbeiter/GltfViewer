@@ -158,7 +158,8 @@ void initImgUi(Window &window) {
 
 int ShowStyleSelector(const char* label, int &model_number)
 {
-    if (ImGui::Combo(label, &model_number, "A\0B\0C\0D\0E\0"))
+    return 6;
+    if (ImGui::Combo(label, &model_number, "A\0B\0C\0D\0E\0F\0G\0"))
     {
         switch (model_number)
         {
@@ -167,6 +168,9 @@ int ShowStyleSelector(const char* label, int &model_number)
           case 'C': model_number = 2; break;
           case 'D': model_number = 3; break;
           case 'E': model_number = 4; break;
+          case 'F': model_number = 5; break;
+          case 'G': model_number = 6; break;
+          case 'H': model_number = 7; break;
         }
         std::cout << "MODEL NUMBER " << model_number << std::endl;
         return model_number + 1;
