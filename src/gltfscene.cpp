@@ -196,14 +196,13 @@ void Scene::setMaterials(tinygltf::Material &material, Shader& ourShader) {
     {
       float number = value.second.number_value;
       ourShader.setFloat("metallicFactor", number);
-      metallicFactorSet = number;
       isMetallicFactorAbsent = false;
     }
-    else if (value.first == "roughFactor")
+    else if (value.first == "roughnessFactor")
     {
       float number = value.second.number_value;
       ourShader.setFloat("roughFactor", number);
-      roughFactorSet = number;
+      //roughFactorSet = number;
       isRoughFactorAbsent = false;
     }
   }
@@ -211,7 +210,7 @@ void Scene::setMaterials(tinygltf::Material &material, Shader& ourShader) {
   // TODO: Set to uint
   glm::vec3 whiteFactor = glm::vec3(1.0f, 1.0f, 1.0f);
   if(isRoughFactorAbsent) {
-    ourShader.setFloat("roughFactor", 1.0f);
+    ourShader.setFloat("roughFactor", 0.0f);
     roughFactorSet = 1.f;
   }
   if(isMetallicFactorAbsent) {
@@ -232,6 +231,7 @@ void Scene::setMaterials(tinygltf::Material &material, Shader& ourShader) {
     }
   }
   ourShader.setBool("isbaseColorTexturePresent", isbaseColorTexturePresent);
+  ourShader.setBool("isRoughFactorAbsent", isRoughFactorAbsent);
   ourShader.setBool("isMetallicTexturePresent", isMetallicTexturePresent);
   ourShader.setBool("isNormalTexturePresent", isNormalTexturePresent);
 }

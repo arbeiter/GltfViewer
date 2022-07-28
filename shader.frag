@@ -14,6 +14,7 @@ uniform sampler2D samp_tex;
 uniform sampler2D metallicTex;
 uniform sampler2D normalTex;
 
+uniform bool isRoughFactorAbsent;
 uniform bool isbaseColorTexturePresent;
 uniform bool isMetallicTexturePresent;
 uniform bool isNormalTexturePresent;
@@ -126,9 +127,8 @@ vec3 dielectric_brdf(float ior, vec3 baseColor, float perceptualRoughness, float
 }
 
 vec3 gltfSpecVersion(PointLight light, PBRInfo pbrInfo) {
-  float distance = length(light.position.xyz - pbrInfo.WP);
-  float attenuation = 1.0 / (distance * distance);
-  vec3 radiance = light.color.xyz * attenuation;
+  float dist = length(light.position.xyz - pbrInfo.WP);
+  float attenuation = 1.0 / (dist * dist);
 
   // if metallicRoughnessTexture, set color to value
   vec3 baseColor = pbrInfo.baseColor;
@@ -151,9 +151,8 @@ vec3 gltfSpecVersion(PointLight light, PBRInfo pbrInfo) {
   vec3 c_diff = mix(baseColor.rgb, vec3(black), metallic);
   vec3 f_diffuse = (1 - F) * (1 / PI) * c_diff;
   vec3 f_specular = (F * D * G) / (4 * abs(NoV) * abs(NoL));
-  vec3 material = f_diffuse + f_specular;
-  vec3 color = material;
-  return SRGBLinear(color * radiance);
+  vec3 material = f_diffuse * attenuation + f_specular * attenuation;
+  return SRGBLinear(material);
 }
 
 PBRInfo generatePBRInfo(PBRInfo pbrInfo) {
@@ -191,26 +190,31 @@ void main() {
     vec3 base_color = base_color_provided;
     if(isbaseColorTexturePresent) {
       vec3 temp = texture2D(samp_tex, texCoord).rgb;
-      base_color = base_color * vec3(LinearSRGB(temp));
+      base_color = base_color.rgb * vec3(LinearSRGB(temp));
     }
 
-    float roughness = 1.0f;
-    float metallic = 1.0f;
+    float r = 1.0f;
+    float m = 1.0f;
+
     if(isMetallicTexturePresent) {
-      vec4 metal_color  = texture2D(metallicTex, texCoord);
-      roughness = metal_color.g * roughness;
-      metallic = metal_color.b * metallic;
-      //FragColor = vec4(vec3(1.0f, 1.0f, 1.0f), 1.0f);
+      vec4 metal_color = texture2D(metallicTex, texCoord);
+      r = metal_color.g * roughFactor;
+      m = metal_color.b * metallicFactor;
     } else {
-      roughness = roughFactor;
-      metallic = metallicFactor;
-      //FragColor = vec4(0.0f, 1.0f, 0.0f, 1.0f);
-      //return;
+      r = roughFactor;
+      m = metallicFactor;
     }
-    pbrInfo.roughness = roughness;
-    pbrInfo.metallic = metallic;
-    pbrInfo.baseColor = vec3(base_color.rgb);
 
+    if(isRoughFactorAbsent) {
+      r = 0.f;
+      FragColor = vec4(vec3(0.0f, 1.0f, 0.0f), 1.0f);
+      return;
+    }
+
+    pbrInfo.roughness = r;
+    pbrInfo.metallic = m;
+
+    pbrInfo.baseColor = vec3(base_color.rgb);
     vec3 color = gltfSpecVersion(light, pbrInfo);
-    FragColor = vec4(color, 1.0f);
+    FragColor = vec4(SRGBLinear(color), 1.0f);
 }
