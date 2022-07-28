@@ -131,7 +131,6 @@ void Scene::drawNode(tinygltf::Model &model, const tinygltf::Node &node, glm::ma
 
 
 void Scene::drawMesh(tinygltf::Mesh &mesh, tinygltf::Model &model, glm::mat4 matrix, std::map<int, GLuint> vbos) {
-
   ourShader.use();
   projection = glm::perspective(glm::radians(45.0f), (float)(width/ height), 0.1f, 4000.0f);
   ourShader.setMat4("model", matrix);
@@ -155,27 +154,31 @@ void Scene::drawMesh(tinygltf::Mesh &mesh, tinygltf::Model &model, glm::mat4 mat
 }
 
 void Scene::setMaterials(tinygltf::Material &material, Shader& ourShader) {
+  bool isBaseColorAbsent = true;
+  bool isMetallicFactorAbsent = true;
+  bool isRoughFactorAbsent = true;
+  bool isbaseColorTexturePresent = false;
+  bool isMetallicTexturePresent = false;
+  bool isNormalTexturePresent = false;
+  float metallicFactorSet = 0.f;
+  float roughFactorSet = 0.f;
+
   for (auto &value : material.values) {
     if (value.first == "baseColorTexture")
     {
         if (value.second.TextureIndex() > -1) {
             glActiveTexture(GL_TEXTURE0 + 0);
             glBindTexture(GL_TEXTURE_2D, allTextures[value.second.TextureIndex()]);
-            // set baseColorTexture to true
-            ourShader.setBool("baseColorAbsent", true);
-        } else {
-            ourShader.setBool("baseColorAbsent", false);
         }
+        isbaseColorTexturePresent = true;
     }
     else if (value.first == "metallicRoughnessTexture")
     {
         if (value.second.TextureIndex() > -1) {
           glActiveTexture(GL_TEXTURE0 + 2);
           glBindTexture(GL_TEXTURE_2D, allTextures[value.second.TextureIndex()]);
-          ourShader.setBool("metallicAbsent", true);
-        } else {
-          ourShader.setBool("metallicAbsent", false);
         }
+        isMetallicTexturePresent = true;
     }
     else if (value.first == "baseColorFactor")
     {
@@ -186,28 +189,51 @@ void Scene::setMaterials(tinygltf::Material &material, Shader& ourShader) {
           (float)value.second.number_array[3]
         };
         glm::vec3 test = glm::vec3(vec[0], vec[1], vec[2]);
-        ourShader.setVec3("test_1", test);
+        ourShader.setVec3("base_color_provided", test);
+        isBaseColorAbsent = false;
     }
     else if (value.first == "metallicFactor")
     {
       float number = value.second.number_value;
       ourShader.setFloat("metallicFactor", number);
+      metallicFactorSet = number;
+      isMetallicFactorAbsent = false;
     }
     else if (value.first == "roughFactor")
     {
       float number = value.second.number_value;
       ourShader.setFloat("roughFactor", number);
+      roughFactorSet = number;
+      isRoughFactorAbsent = false;
     }
+  }
+
+  // TODO: Set to uint
+  glm::vec3 whiteFactor = glm::vec3(1.0f, 1.0f, 1.0f);
+  if(isRoughFactorAbsent) {
+    ourShader.setFloat("roughFactor", 1.0f);
+    roughFactorSet = 1.f;
+  }
+  if(isMetallicFactorAbsent) {
+    metallicFactorSet = 0.0f;
+    ourShader.setFloat("metallicFactor", 0.0f);
+  }
+  if(isBaseColorAbsent) {
+    ourShader.setVec3("base_color_provided", whiteFactor);
   }
 
   for (auto &value : material.additionalValues)
   {
     if (value.first == "normalTexture")
     {
+      isNormalTexturePresent = true;
       glActiveTexture(GL_TEXTURE0 + 1);
       glBindTexture(GL_TEXTURE_2D, allTextures[value.second.TextureIndex()]);
     }
   }
+  ourShader.setBool("isbaseColorTexturePresent", isbaseColorTexturePresent);
+  ourShader.setBool("isMetallicTexturePresent", isMetallicTexturePresent);
+  ourShader.setBool("isNormalTexturePresent", isNormalTexturePresent);
 }
 
 void Scene::setView(glm::mat4 &viewParam) {

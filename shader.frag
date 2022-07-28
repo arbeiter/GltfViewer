@@ -1,18 +1,22 @@
 #version 330 core
 
-in float metallicFactor;
-in float roughFactor;
-in vec3 test1;
 in vec2 texCoord;
 in vec3 camPos;
 in vec3 world_pos;
 in vec3 v_normal;
 in vec3 v_color;
+uniform vec3 base_color_provided;
 
-uniform bool metallicAbsent;
-uniform bool baseColorAbsent;
-uniform vec4 inputBaseColor;
+uniform float metallicFactor;
+uniform float roughFactor;
+
 uniform sampler2D samp_tex;
+uniform sampler2D metallicTex;
+uniform sampler2D normalTex;
+
+uniform bool isbaseColorTexturePresent;
+uniform bool isMetallicTexturePresent;
+uniform bool isNormalTexturePresent;
 
 layout(location = 0) out vec4 FragColor;
 
@@ -135,6 +139,7 @@ vec3 gltfSpecVersion(PointLight light, PBRInfo pbrInfo) {
   float VoH = clamp(dot(pbrInfo.V, H), 0.0, 1.0);
   float NoL = clamp(dot(pbrInfo.N, L), 0.001, 1.0);
   float black = 1.0;
+
   float D = DistributionGGX(pbrInfo.N, H, pbrInfo.roughness);
   float G   = GeometrySmith(pbrInfo.N, pbrInfo.V, L, pbrInfo.roughness);
   vec3 F = fresnelSchlick(VoH, pbrInfo.F0);
@@ -145,9 +150,9 @@ vec3 gltfSpecVersion(PointLight light, PBRInfo pbrInfo) {
 
   vec3 c_diff = mix(baseColor.rgb, vec3(black), metallic);
   vec3 f_diffuse = (1 - F) * (1 / PI) * c_diff;
-  vec3 f_specular = F * D * G / (4 * abs(NoV) * abs(NoL));
+  vec3 f_specular = (F * D * G) / (4 * abs(NoV) * abs(NoL));
   vec3 material = f_diffuse + f_specular;
-  vec3 color =  material;
+  vec3 color = material;
   return SRGBLinear(color * radiance);
 }
 
@@ -155,15 +160,10 @@ PBRInfo generatePBRInfo(PBRInfo pbrInfo) {
   // baseColorFactor
   // metallicFactor
   // roughnessFactor
-  float roughnessFactor = roughFactor;
   vec3 derived_v = normalize(camPos.xyz - world_pos);
 
   pbrInfo.WP = world_pos;
   pbrInfo.albedo = vec3(1.0);
-  if(metallicAbsent) {
-    pbrInfo.metallic = 0.0f;
-  }
-  pbrInfo.baseColor = vec3(inputBaseColor.x, inputBaseColor.y, inputBaseColor.z);
 
   vec3 fresnel = vec3(0.04);
   fresnel = mix(fresnel, pbrInfo.albedo, vec3(pbrInfo.metallic));
@@ -172,7 +172,6 @@ PBRInfo generatePBRInfo(PBRInfo pbrInfo) {
   pbrInfo.N = v_normal;
   pbrInfo.V = derived_v;
   pbrInfo.NoV = clamp(dot(pbrInfo.N, pbrInfo.V), 0.0, 1.0);
-  pbrInfo.roughness = roughnessFactor;
   return pbrInfo;
 }
 
@@ -185,19 +184,33 @@ PointLight generatePointLight(PointLight light) {
 void main() {
     PBRInfo pbrInfo;
     PointLight light;
+
     light = generatePointLight(light);
     pbrInfo = generatePBRInfo(pbrInfo);
-    if(baseColorAbsent) {
+
+    vec3 base_color = base_color_provided;
+    if(isbaseColorTexturePresent) {
       vec3 temp = texture2D(samp_tex, texCoord).rgb;
-      vec3 base_color = vec3(LinearSRGB(temp));
-      pbrInfo.baseColor = vec3(base_color.rgb);
-    } else {
-      pbrInfo.baseColor = test1;
+      base_color = base_color * vec3(LinearSRGB(temp));
     }
+
+    float roughness = 1.0f;
+    float metallic = 1.0f;
+    if(isMetallicTexturePresent) {
+      vec4 metal_color  = texture2D(metallicTex, texCoord);
+      roughness = metal_color.g * roughness;
+      metallic = metal_color.b * metallic;
+      //FragColor = vec4(vec3(1.0f, 1.0f, 1.0f), 1.0f);
+    } else {
+      roughness = roughFactor;
+      metallic = metallicFactor;
+      //FragColor = vec4(0.0f, 1.0f, 0.0f, 1.0f);
+      //return;
+    }
+    pbrInfo.roughness = roughness;
+    pbrInfo.metallic = metallic;
+    pbrInfo.baseColor = vec3(base_color.rgb);
+
     vec3 color = gltfSpecVersion(light, pbrInfo);
     FragColor = vec4(color, 1.0f);
-    /*
-    if(v_color != vec3(0.0f)) {
-      FragColor *= vec4(v_color, 1.0f);
-    }*/
 }

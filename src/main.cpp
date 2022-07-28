@@ -127,7 +127,7 @@ void mouse_callback(GLFWwindow* window, double xposIn, double yposIn)
 }
 
 void scroll_callback(GLFWwindow* window, double xoffset, double yoffset) {
-  camera.zoom(yoffset * 0.1);
+  camera.zoom(yoffset * 1.0);
 }
 
 void glfwSetWindowSizeCallback(GLFWwindow* window, int width, int height)
@@ -158,7 +158,7 @@ void initImgUi(Window &window) {
 
 int ShowStyleSelector(const char* label, int &model_number)
 {
-    return 6;
+    return 3;
     if (ImGui::Combo(label, &model_number, "A\0B\0C\0D\0E\0F\0G\0"))
     {
         switch (model_number)
