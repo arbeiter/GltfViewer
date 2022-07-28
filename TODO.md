@@ -1,4 +1,8 @@
-### TODO:
+### Feature List
+- Test shader flags
+- Bounding box and move camera to a position above the centroid
+- Normal viewer with geometry shader
+
 - Figure out how to make multiple textures work
 - Node hierarchy broken?
 
@@ -7,7 +11,6 @@
 - Colored vertices: Figure out how to reset stuff when its not set
 
 ### Checklist before git push
-
 - Add Imgui to circle between all models
 - First person camera
   - Flyby camera
