@@ -158,7 +158,7 @@ void initImgUi(Window &window) {
 
 int ShowStyleSelector(const char* label, int &model_number)
 {
-  return 10;
+  return 11;
     if (ImGui::Combo(label, &model_number, "A\0B\0C\0D\0E\0F\0G\0"))
     {
         switch (model_number)

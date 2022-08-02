@@ -207,14 +207,14 @@ void main() {
 
     if(isRoughFactorAbsent) {
       r = 0.f;
-      FragColor = vec4(vec3(0.0f, 1.0f, 0.0f), 1.0f);
-      return;
+      //FragColor = vec4(vec3(0.0f, 1.0f, 0.0f), 1.0f);
+      //return;
     }
 
     pbrInfo.roughness = r;
     pbrInfo.metallic = m;
 
-    pbrInfo.baseColor = vec3(base_color.rgb);
+    pbrInfo.baseColor = vec3(base_color.rgb); //* v_color;
     vec3 color = gltfSpecVersion(light, pbrInfo);
     FragColor = vec4(SRGBLinear(color), 1.0f);
 }

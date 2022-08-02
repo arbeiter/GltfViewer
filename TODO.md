@@ -1,7 +1,10 @@
 ### Feature List
-- Test shader flags
-- Bounding box and move camera to a position above the centroid
+- Import camera
+- Integrate normal and tangent geometry
 - Normal viewer with geometry shader
+
+### Nice to have
+- Bounding box and move camera to a position above the centroid
 
 - Figure out how to make multiple textures work
 - Node hierarchy broken?
