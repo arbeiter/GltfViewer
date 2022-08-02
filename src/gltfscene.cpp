@@ -75,7 +75,7 @@ void Scene::loadModel(glm::mat4 &view, int elem) {
   std::string folderName = "";
 
   std::string altFileName2 = "resources/deccer-cubes/SM_Deccer_Cubes_Textured.gltf";
-  std::string altFileName = "resources/models/test12/12.gltf";
+  std::string altFileName = "resources/models/test13/13.gltf";
   std::string filename = "resources/models/test" + modelNumber + "/" + modelNumber + ".gltf";
   std::cout << "Attempting to load " << filename << " " << std::endl;
   if (!loadGltf(model, altFileName.c_str())) {
@@ -89,20 +89,10 @@ void Scene::loadModel(glm::mat4 &view, int elem) {
 }
 
 void Scene::drawNode(tinygltf::Model &model, const tinygltf::Node &node, glm::mat4 matrix, std::map<int, GLuint> vbos) {
+      glm::mat4 t(1.0f);
+      glm::mat4 r(1.0f);
+      glm::mat4 s(1.0f);
       glm::mat4 gltf_mat(1.0f);
-      if(node.translation.size() == 3) {
-        matrix = glm::translate(matrix, glm::vec3(node.translation[0], node.translation[1], node.translation[2]));
-      }
-
-      if (node.rotation.size() == 4) {
-        glm::quat q = glm::make_quat(node.rotation.data());
-        matrix *= glm::mat4(q);
-      }
-
-      if(node.scale.size() == 3) {
-        matrix = glm::scale(matrix, glm::vec3(glm::make_vec3(node.scale.data())));
-      }
-
       if(node.matrix.size() == 16) {
         /*
           gltf_mat = glm::mat4(node.matrix[0], node.matrix[1],
@@ -111,9 +101,24 @@ void Scene::drawNode(tinygltf::Model &model, const tinygltf::Node &node, glm::ma
                     node.matrix[8], node.matrix[9], node.matrix[10],
                     node.matrix[11], node.matrix[12], node.matrix[13],
                     node.matrix[14], node.matrix[15]);
+        for (uint j = 0; j < 16; j++) {
+            gltf_mat[j/4][j%4] = static_cast<float>(node.matrix[j]);
+        }
         */
-        gltf_mat = glm::make_mat4x4(node.matrix.data());
-        matrix = gltf_mat * matrix;
+        matrix = glm::make_mat4x4(node.matrix.data());
+        matrix = matrix * gltf_mat;
+      } else {
+        if(node.translation.size() == 3) {
+          t = glm::translate(matrix, glm::vec3(node.translation[0], node.translation[1], node.translation[2]));
+        }
+        if (node.rotation.size() == 4) {
+          glm::quat q = glm::make_quat(node.rotation.data());
+          r = glm::mat4(q);
+        }
+        if(node.scale.size() == 3) {
+          s = glm::scale(matrix, glm::vec3(glm::make_vec3(node.scale.data())));
+        }
+        matrix =  t * r * s * matrix;
       }
 
       for(size_t i = 0; i < node.children.size(); ++i)
@@ -152,13 +157,13 @@ void Scene::drawMesh(tinygltf::Mesh &mesh, tinygltf::Model &model, glm::mat4 mat
 
         const tinygltf::BufferView& indexBufferView = model.bufferViews[indexAccessor.bufferView];
         const tinygltf::Buffer &indexBuffer = model.buffers[indexBufferView.buffer];
-        std::cout << "indexAccessor.bufferView = " << indexAccessor.bufferView << std::endl;
-        std::cout << "indexAccessor.byteOffset = " << indexAccessor.byteOffset << std::endl;
 
         if(buffer_type == GL_ARRAY_BUFFER) {
+          exit(0);
         } else {
           glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, vbos.at(indexAccessor.bufferView));
-          glDrawElements(GL_TRIANGLES, indexAccessor.count, indexAccessor.componentType, BUFFER_OFFSET(indexAccessor.byteOffset));
+          glDrawElements(GL_TRIANGLES, indexAccessor.count, indexAccessor.componentType,
+                         BUFFER_OFFSET(indexAccessor.byteOffset));
         }
       }
   }
@@ -274,6 +279,7 @@ std::pair<GLuint, std::map<int, GLuint>> Scene::bindCrude(tinygltf::Model &model
     tinygltf::Node &node = model.nodes[scene.nodes[i]];
     bindModelNodes(vbos, model, node);
   }
+
   return {vao, vbos};
 }
 
@@ -304,7 +310,7 @@ void Scene::bindMesh(std::map<int, GLuint>& vbos,
     for (size_t a_i = 0; a_i < model.accessors.size(); ++a_i) {
         const auto &accessor = model.accessors[a_i];
         if (accessor.bufferView == i) {
-          std::cout << i << " is used by accessor " << a_i << std::endl;
+          // std::cout << i << " is used by accessor " << a_i << std::endl;
           if (accessor.sparse.isSparse) {
             std::cout
                 << "WARN: this bufferView has at least one sparse accessor to "
@@ -313,7 +319,6 @@ void Scene::bindMesh(std::map<int, GLuint>& vbos,
                 << std::endl;
             sparse_accessor = a_i;
             exit(0);
-            break;
           }
         }
     }
@@ -326,6 +331,7 @@ void Scene::bindMesh(std::map<int, GLuint>& vbos,
     glBindBuffer(bufferView.target, vbo);
     glBufferData(bufferView.target, bufferView.byteLength,
                  &buffer.data.at(0) + bufferView.byteOffset, GL_STATIC_DRAW);
+    glBindBuffer(bufferView.target, 0);
   }
 
   for (size_t i = 0; i < mesh.primitives.size(); ++i) {
