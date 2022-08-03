@@ -78,7 +78,7 @@ void Scene::loadModel(glm::mat4 &view, int elem) {
   std::string altFileName = "resources/models/test13/13.gltf";
   std::string filename = "resources/models/test" + modelNumber + "/" + modelNumber + ".gltf";
   std::cout << "Attempting to load " << filename << " " << std::endl;
-  if (!loadGltf(model, altFileName.c_str())) {
+  if (!loadGltf(model, altFileName2.c_str())) {
     std::cout << getexepath() << std::endl;
     std::cout << "File could not be found " << filename << " " << std::endl;
     return;
