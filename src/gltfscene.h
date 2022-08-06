@@ -27,6 +27,7 @@ class Scene
       tinygltf::Model internalModel;
       std::pair<GLuint, std::map<int, GLuint>> vaoAndEbos;
       std::vector<GLuint> allTextures;
+      std::map<std::string, GLuint> indexMap;
       bool loadGltf(tinygltf::Model &model, const char* filename);
 
   public:

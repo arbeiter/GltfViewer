@@ -153,17 +153,18 @@ void Scene::drawMesh(tinygltf::Mesh &mesh, tinygltf::Model &model, glm::mat4 mat
       }
 
       if(primitive.indices > -1) {
+
+        std::string key = mesh.name + std::to_string(i);
         std::cout << "Mesh: Primitive not none" << std::endl;
         tinygltf::Accessor indexAccessor = model.accessors[primitive.indices];
         int buffer_type = model.bufferViews[indexAccessor.bufferView].target;
-
         const tinygltf::BufferView& indexBufferView = model.bufferViews[indexAccessor.bufferView];
-        const tinygltf::Buffer &indexBuffer = model.buffers[indexBufferView.buffer];
+        GLuint index_buffer = indexMap[key];
 
         if(buffer_type == GL_ARRAY_BUFFER) {
           exit(0);
         } else {
-          glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, vbos.at(indexAccessor.bufferView));
+          //glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, index_buffer);
           //v1: (void*) ((sizeof(uint16_t)) * (indexBufferView.byteOffset + indexAccessor.byteOffset)));
           //v2: (void*) ((sizeof(uint16_t)) * (indexAccessor.byteOffset)));
           std::cout << "Mesh: Index count" << indexAccessor.count << " " << std::endl;
@@ -362,9 +363,26 @@ void Scene::bindMesh(std::map<int, GLuint>& vbos,
     glBindBuffer(bufferView.target, 0);
   }
 
+
   for (size_t i = 0; i < mesh.primitives.size(); ++i) {
       tinygltf::Primitive primitive = mesh.primitives[i];
       tinygltf::Accessor indexAccessor = model.accessors[primitive.indices];
+
+      if(primitive.indices > -1) {
+        std::string key = mesh.name + std::to_string(i);
+        const tinygltf::Accessor& accessor = model.accessors[primitive.indices];
+        const tinygltf::BufferView& bufferView = model.bufferViews[accessor.bufferView];
+        const tinygltf::Buffer& buffer = model.buffers[bufferView.buffer];
+
+        GLuint index_buffer;
+        glGenBuffers(1, &index_buffer);
+        glBindBuffer(bufferView.target, index_buffer);
+        glBufferData(bufferView.target, bufferView.byteLength,
+                     &buffer.data.at(0) + bufferView.byteOffset, GL_STATIC_DRAW);
+
+        indexMap[key] = index_buffer;
+      }
+
       for (auto &attrib : primitive.attributes) {
           tinygltf::Accessor accessor = model.accessors[attrib.second];
           int byteStride = accessor.ByteStride(model.bufferViews[accessor.bufferView]);
@@ -407,7 +425,6 @@ void Scene::loadTextures(tinygltf::Model &model) {
         glBindTexture(GL_TEXTURE_2D, texid);
         glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
         glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
-        //TODO: Remove if line above broken: glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
         glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
