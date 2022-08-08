@@ -39,6 +39,7 @@ class Scene
       void dbgModel(tinygltf::Model &model);
       void loadTextures(tinygltf::Model &model);
       std::pair<GLuint, std::map<int, GLuint>> bindCrude(tinygltf::Model &model);
+      std::vector<uint32_t> fetchIndices(const tinygltf::Model &model, const tinygltf::Primitive& primitive);
 
       std::string getexepath();
       void bindModelNodes(std::map<int, GLuint>& vbos, tinygltf::Model &model, tinygltf::Node &node);

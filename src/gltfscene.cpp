@@ -89,7 +89,6 @@ void Scene::loadModel(glm::mat4 &view, int elem) {
 }
 
 void Scene::drawNode(tinygltf::Model &model, const tinygltf::Node &node, glm::mat4 matrix, std::map<int, GLuint> vbos) {
-
       std::cout << "Drawing node " << node.name << std::endl;
       glm::mat4 t(1.0f);
       glm::mat4 r(1.0f);
@@ -136,8 +135,34 @@ void Scene::drawNode(tinygltf::Model &model, const tinygltf::Node &node, glm::ma
       }
 }
 
-void Scene::drawMesh(tinygltf::Mesh &mesh, tinygltf::Model &model, glm::mat4 matrix, std::map<int, GLuint> vbos) {
+std::vector<uint32_t> Scene::fetchIndices(const tinygltf::Model &model, const tinygltf::Primitive& primitive) {
 
+  const tinygltf::Accessor& accessor = model.accessors[primitive.indices];
+  uint32_t index_count = accessor.count;
+  const tinygltf::BufferView& buffer_view = model.bufferViews[accessor.bufferView];
+  const tinygltf::Buffer& buffer = model.buffers[buffer_view.buffer];
+  const uint8_t* data = (const uint8_t*)buffer.data.data();
+  data += buffer_view.byteOffset;
+
+  // Obtain indices
+  int component_type = accessor.componentType;
+  std::vector<uint32_t> indices;
+  indices.reserve(index_count);
+  if(component_type == 5123) {
+    const uint16_t* ptr = (const uint16_t*)data;
+    for (uint32_t i = 0; i < index_count; i++) {
+      indices.push_back(*ptr++);
+    }
+  } else {
+    const uint32_t* ptr = (const uint32_t*)data;
+    for (uint32_t i = 0; i < index_count; i++) {
+      indices.push_back(*ptr++);
+    }
+  }
+  return indices;
+}
+
+void Scene::drawMesh(tinygltf::Mesh &mesh, tinygltf::Model &model, glm::mat4 matrix, std::map<int, GLuint> vbos) {
   ourShader.use();
   projection = glm::perspective(glm::radians(30.0f), (float)(width / height), 0.04991f, 10000000.0f);
 
@@ -153,40 +178,15 @@ void Scene::drawMesh(tinygltf::Mesh &mesh, tinygltf::Model &model, glm::mat4 mat
       }
 
       if(primitive.indices > -1) {
-
         std::string key = mesh.name + std::to_string(i);
         std::cout << "Mesh: Primitive not none" << std::endl;
-        tinygltf::Accessor indexAccessor = model.accessors[primitive.indices];
-        int buffer_type = model.bufferViews[indexAccessor.bufferView].target;
-        const tinygltf::BufferView& indexBufferView = model.bufferViews[indexAccessor.bufferView];
+        const tinygltf::Accessor& accessor = model.accessors[primitive.indices];
+        int buffer_type = model.bufferViews[accessor.bufferView].target;
         GLuint index_buffer = indexMap[key];
-
         if(buffer_type == GL_ARRAY_BUFFER) {
           exit(0);
         } else {
-          //glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, index_buffer);
-          //v1: (void*) ((sizeof(uint16_t)) * (indexBufferView.byteOffset + indexAccessor.byteOffset)));
-          //v2: (void*) ((sizeof(uint16_t)) * (indexAccessor.byteOffset)));
-          std::cout << "Mesh: Index count" << indexAccessor.count << " " << std::endl;
-          int mode = -1;
-          if (primitive.mode == TINYGLTF_MODE_TRIANGLES) {
-            mode = GL_TRIANGLES;
-          } else if (primitive.mode == TINYGLTF_MODE_TRIANGLE_STRIP) {
-            mode = GL_TRIANGLE_STRIP;
-          } else if (primitive.mode == TINYGLTF_MODE_TRIANGLE_FAN) {
-            mode = GL_TRIANGLE_FAN;
-          } else if (primitive.mode == TINYGLTF_MODE_POINTS) {
-            mode = GL_POINTS;
-          } else if (primitive.mode == TINYGLTF_MODE_LINE) {
-            mode = GL_LINES;
-          } else if (primitive.mode == TINYGLTF_MODE_LINE_LOOP) {
-            mode = GL_LINE_LOOP;
-          } else {
-            assert(0);
-          }
-          glDrawElements(mode, indexAccessor.count, indexAccessor.componentType, BUFFER_OFFSET(indexAccessor.byteOffset));
-          // v3: glDrawElements(primitive.mode, indexAccessor.count, indexAccessor.componentType, reinterpret_cast<void*>(0 + indexAccessor.byteOffset));
-          //glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+          glDrawElements(GL_TRIANGLES, accessor.count, accessor.componentType, 0);
         }
       }
   }
@@ -285,8 +285,10 @@ void Scene::drawScene(glm::mat4 &viewParam) {
   glm::vec3 v_position = glm::vec3(projection[3][0], projection[3][1], projection[3][2]);
   ourShader.setVec3("light_pos", v_position);
 
+  glBindVertexArray(vaoAndEbos.first);
   setView(viewParam);
   glm::mat4 model_mat(1.0f);
+
   std::cout << "START" << std::endl;
   for (const tinygltf::Scene& scene : internalModel.scenes) {
     for(size_t i = 0; i < scene.nodes.size(); i++) {
@@ -308,6 +310,19 @@ std::pair<GLuint, std::map<int, GLuint>> Scene::bindCrude(tinygltf::Model &model
   for(size_t i = 0; i < scene.nodes.size(); ++i) {
     tinygltf::Node &node = model.nodes[scene.nodes[i]];
     bindModelNodes(vbos, model, node);
+  }
+
+  glBindVertexArray(0);
+  // cleanup vbos but do not delete index buffers yet
+  for (auto it = vbos.cbegin(); it != vbos.cend();) {
+    tinygltf::BufferView bufferView = model.bufferViews[it->first];
+    if (bufferView.target != GL_ELEMENT_ARRAY_BUFFER) {
+      glDeleteBuffers(1, &vbos[it->first]);
+      vbos.erase(it++);
+    }
+    else {
+      ++it;
+    }
   }
 
   return {vao, vbos};
@@ -360,9 +375,7 @@ void Scene::bindMesh(std::map<int, GLuint>& vbos,
     glBindBuffer(bufferView.target, vbo);
     glBufferData(bufferView.target, bufferView.byteLength,
                  &buffer.data.at(0) + bufferView.byteOffset, GL_STATIC_DRAW);
-    glBindBuffer(bufferView.target, 0);
   }
-
 
   for (size_t i = 0; i < mesh.primitives.size(); ++i) {
       tinygltf::Primitive primitive = mesh.primitives[i];
@@ -370,16 +383,16 @@ void Scene::bindMesh(std::map<int, GLuint>& vbos,
 
       if(primitive.indices > -1) {
         std::string key = mesh.name + std::to_string(i);
+
         const tinygltf::Accessor& accessor = model.accessors[primitive.indices];
         const tinygltf::BufferView& bufferView = model.bufferViews[accessor.bufferView];
         const tinygltf::Buffer& buffer = model.buffers[bufferView.buffer];
 
         GLuint index_buffer;
         glGenBuffers(1, &index_buffer);
-        glBindBuffer(bufferView.target, index_buffer);
-        glBufferData(bufferView.target, bufferView.byteLength,
-                     &buffer.data.at(0) + bufferView.byteOffset, GL_STATIC_DRAW);
-
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, index_buffer);
+        std::vector<uint32_t> indices = fetchIndices(model, primitive);
+        glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * 32, &indices[0], GL_STATIC_DRAW);
         indexMap[key] = index_buffer;
       }
 
