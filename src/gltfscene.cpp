@@ -178,11 +178,17 @@ void Scene::drawMesh(tinygltf::Mesh &mesh, tinygltf::Model &model, glm::mat4 mat
       }
 
       if(primitive.indices > -1) {
-        std::string key = mesh.name + std::to_string(i);
-        std::cout << "Mesh: Primitive not none" << std::endl;
         const tinygltf::Accessor& accessor = model.accessors[primitive.indices];
-        int buffer_type = model.bufferViews[accessor.bufferView].target;
-        GLuint index_buffer = indexMap[key];
+        const tinygltf::BufferView& bufferView = model.bufferViews[accessor.bufferView];
+        const tinygltf::Buffer& buffer = model.buffers[bufferView.buffer];
+
+        GLuint vbo = vbos[i];
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, vbo);
+        std::vector<uint32_t> indices = fetchIndices(model, primitive);
+        std::cout << "XIDC DRAW MESH " << indices.size() << std::endl;
+        glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size(), &indices[0], GL_STATIC_DRAW);
+
+        int buffer_type = bufferView.target;
         if(buffer_type == GL_ARRAY_BUFFER) {
           exit(0);
         } else {
@@ -380,21 +386,6 @@ void Scene::bindMesh(std::map<int, GLuint>& vbos,
   for (size_t i = 0; i < mesh.primitives.size(); ++i) {
       tinygltf::Primitive primitive = mesh.primitives[i];
       tinygltf::Accessor indexAccessor = model.accessors[primitive.indices];
-
-      if(primitive.indices > -1) {
-        std::string key = mesh.name + std::to_string(i);
-
-        const tinygltf::Accessor& accessor = model.accessors[primitive.indices];
-        const tinygltf::BufferView& bufferView = model.bufferViews[accessor.bufferView];
-        const tinygltf::Buffer& buffer = model.buffers[bufferView.buffer];
-
-        GLuint index_buffer;
-        glGenBuffers(1, &index_buffer);
-        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, index_buffer);
-        std::vector<uint32_t> indices = fetchIndices(model, primitive);
-        glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * 32, &indices[0], GL_STATIC_DRAW);
-        indexMap[key] = index_buffer;
-      }
 
       for (auto &attrib : primitive.attributes) {
           tinygltf::Accessor accessor = model.accessors[attrib.second];
