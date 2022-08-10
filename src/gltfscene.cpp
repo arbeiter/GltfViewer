@@ -130,12 +130,11 @@ void Scene::drawNode(tinygltf::Model &model, const tinygltf::Node &node, glm::ma
 
       if(node.mesh > -1) {
         tinygltf::Mesh &mesh = model.meshes[node.mesh];
-        std::cout << "Drawing Mesh " << node.name << " " << mesh.name << " " << std::endl;
         drawMesh(mesh, model, matrix, vbos);
       }
 }
 
-std::vector<uint32_t> Scene::fetchIndices(const tinygltf::Model &model, const tinygltf::Primitive& primitive) {
+std::vector<uint16_t> Scene::fetchIndices(const tinygltf::Model &model, const tinygltf::Primitive& primitive) {
 
   const tinygltf::Accessor& accessor = model.accessors[primitive.indices];
   uint32_t index_count = accessor.count;
@@ -146,7 +145,7 @@ std::vector<uint32_t> Scene::fetchIndices(const tinygltf::Model &model, const ti
 
   // Obtain indices
   int component_type = accessor.componentType;
-  std::vector<uint32_t> indices;
+  std::vector<uint16_t> indices;
   indices.reserve(index_count);
   if(component_type == 5123) {
     const uint16_t* ptr = (const uint16_t*)data;
@@ -182,17 +181,18 @@ void Scene::drawMesh(tinygltf::Mesh &mesh, tinygltf::Model &model, glm::mat4 mat
         const tinygltf::BufferView& bufferView = model.bufferViews[accessor.bufferView];
         const tinygltf::Buffer& buffer = model.buffers[bufferView.buffer];
 
-        GLuint vbo = vbos[i];
-        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, vbo);
-        std::vector<uint32_t> indices = fetchIndices(model, primitive);
-        std::cout << "XIDC DRAW MESH " << indices.size() << std::endl;
-        glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size(), &indices[0], GL_STATIC_DRAW);
+        GLuint x = vbos[i];
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, x);
+
+        std::vector<uint16_t> indices = fetchIndices(model, primitive);
+        std::cout << "XIDC DRAW MESH " << indices.size() << "with vbo " << x << std::endl;
+        glBufferData(primitive.mode, indices.size() * sizeof(uint16_t), indices.data(), GL_STATIC_DRAW);
 
         int buffer_type = bufferView.target;
         if(buffer_type == GL_ARRAY_BUFFER) {
           exit(0);
         } else {
-          glDrawElements(GL_TRIANGLES, accessor.count, accessor.componentType, 0);
+          glDrawElements(GL_TRIANGLES, indices.size() * sizeof(uint16_t), GL_UNSIGNED_INT, 0);
         }
       }
   }
