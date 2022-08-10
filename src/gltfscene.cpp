@@ -2,6 +2,11 @@
 #include <iostream>
 #define BUFFER_OFFSET(i) ((char *)NULL + (i))
 
+typedef struct {
+  GLuint vb;
+} GLBufferState;
+std::map<int, GLBufferState> gBufferState;
+
 Scene::Scene(Shader &shader): ourShader(shader) {
   width = 800;
   height = 600;
@@ -137,13 +142,41 @@ void Scene::drawNode(tinygltf::Model &model, const tinygltf::Node &node, glm::ma
 }
 
 void Scene::drawMesh(tinygltf::Mesh &mesh, tinygltf::Model &model, glm::mat4 matrix, std::map<int, GLuint> vbos) {
-
   ourShader.use();
   projection = glm::perspective(glm::radians(30.0f), (float)(width / height), 0.04991f, 10000000.0f);
 
   ourShader.setMat4("model", matrix);
   ourShader.setMat4("view", view);
   ourShader.setMat4("projection", projection);
+
+  for (size_t i = 0; i < mesh.primitives.size(); ++i) {
+      tinygltf::Primitive primitive = mesh.primitives[i];
+      for (auto &attrib : primitive.attributes) {
+          tinygltf::Accessor accessor = model.accessors[attrib.second];
+          glBindBuffer(GL_ARRAY_BUFFER, gBufferState[accessor.bufferView].vb);
+
+          int byteStride = accessor.ByteStride(model.bufferViews[accessor.bufferView]);
+          assert(byteStride != -1);
+
+          int size = 1;
+          if (accessor.type != TINYGLTF_TYPE_SCALAR) {
+            size = accessor.type;
+          }
+
+          int vaa = -1;
+          if (attrib.first.compare("POSITION") == 0) vaa = 0;
+          if (attrib.first.compare("NORMAL") == 0) vaa = 1;
+          if (attrib.first.compare("TEXCOORD_0") == 0) vaa = 2;
+          if (attrib.first.compare("COLOR_0") == 0) vaa = 3;
+          if (attrib.first.compare("TANGENT") == 0) vaa = 4;
+          if(vaa > -1) {
+              glVertexAttribPointer(vaa, size, accessor.componentType,
+                                    accessor.normalized ? GL_TRUE : GL_FALSE,
+                                    byteStride, BUFFER_OFFSET(accessor.byteOffset));
+              glEnableVertexAttribArray(vaa);
+          }
+      }
+  }
 
   for (size_t i = 0; i < mesh.primitives.size(); ++i) {
       tinygltf::Primitive primitive = mesh.primitives[i];
@@ -154,18 +187,16 @@ void Scene::drawMesh(tinygltf::Mesh &mesh, tinygltf::Model &model, glm::mat4 mat
 
       if(primitive.indices > -1) {
         std::cout << "Mesh: Primitive not none" << std::endl;
+
         tinygltf::Accessor indexAccessor = model.accessors[primitive.indices];
         int buffer_type = model.bufferViews[indexAccessor.bufferView].target;
-
         const tinygltf::BufferView& indexBufferView = model.bufferViews[indexAccessor.bufferView];
         const tinygltf::Buffer &indexBuffer = model.buffers[indexBufferView.buffer];
 
         if(buffer_type == GL_ARRAY_BUFFER) {
           exit(0);
         } else {
-          glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, vbos.at(indexAccessor.bufferView));
-          //v1: (void*) ((sizeof(uint16_t)) * (indexBufferView.byteOffset + indexAccessor.byteOffset)));
-          //v2: (void*) ((sizeof(uint16_t)) * (indexAccessor.byteOffset)));
+          glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, gBufferState[indexAccessor.bufferView].vb);
           std::cout << "Mesh: Index count" << indexAccessor.count << " " << std::endl;
           int mode = -1;
           if (primitive.mode == TINYGLTF_MODE_TRIANGLES) {
@@ -188,6 +219,7 @@ void Scene::drawMesh(tinygltf::Mesh &mesh, tinygltf::Model &model, glm::mat4 mat
           //glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
         }
       }
+
   }
 }
 
@@ -353,42 +385,16 @@ void Scene::bindMesh(std::map<int, GLuint>& vbos,
     }
 
     const tinygltf::Buffer &buffer = model.buffers[bufferView.buffer];
-    GLuint vbo;
-    glGenBuffers(1, &vbo);
-    vbos[i] = vbo;
-    glBindBuffer(bufferView.target, vbo);
+    GLBufferState state;
+    glGenBuffers(1, &state.vb);
+    glBindBuffer(bufferView.target, state.vb);
     glBufferData(bufferView.target, bufferView.byteLength,
-                 &buffer.data.at(0) + bufferView.byteOffset, GL_STATIC_DRAW);
+                 &buffer.data.at(0) + bufferView.byteOffset,
+                 GL_STATIC_DRAW);
     glBindBuffer(bufferView.target, 0);
+    gBufferState[i] = state;
   }
 
-  for (size_t i = 0; i < mesh.primitives.size(); ++i) {
-      tinygltf::Primitive primitive = mesh.primitives[i];
-      tinygltf::Accessor indexAccessor = model.accessors[primitive.indices];
-      for (auto &attrib : primitive.attributes) {
-          tinygltf::Accessor accessor = model.accessors[attrib.second];
-          int byteStride = accessor.ByteStride(model.bufferViews[accessor.bufferView]);
-          glBindBuffer(GL_ARRAY_BUFFER, vbos[accessor.bufferView]);
-
-          int size = 1;
-          if (accessor.type != TINYGLTF_TYPE_SCALAR) {
-            size = accessor.type;
-          }
-
-          int vaa = -1;
-          if (attrib.first.compare("POSITION") == 0) vaa = 0;
-          if (attrib.first.compare("NORMAL") == 0) vaa = 1;
-          if (attrib.first.compare("TEXCOORD_0") == 0) vaa = 2;
-          if (attrib.first.compare("COLOR_0") == 0) vaa = 3;
-          if (attrib.first.compare("TANGENT") == 0) vaa = 4;
-          if(vaa > -1) {
-              glEnableVertexAttribArray(vaa);
-              glVertexAttribPointer(vaa, size, accessor.componentType,
-                                    accessor.normalized ? GL_TRUE : GL_FALSE,
-                                    byteStride, BUFFER_OFFSET(accessor.byteOffset));
-          }
-      }
-  }
 
   if (model.textures.size() > 0) {
     loadTextures(model);
