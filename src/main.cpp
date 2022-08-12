@@ -178,8 +178,10 @@ int ShowStyleSelector(const char* label, int &model_number)
     return model_number;
 }
 
-int main()
+int main(int argc, char **argv)
 {
+  std::string arg = argv[1];
+  std::cout << "Take in path " << arg << std::endl;
   glfwInit();
   glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
   glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 6);

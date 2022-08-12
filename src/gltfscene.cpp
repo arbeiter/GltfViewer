@@ -1,11 +1,17 @@
 #include "gltfscene.h"
 #include <iostream>
 #define BUFFER_OFFSET(i) ((char *)NULL + (i))
+int count = 0;
 
 typedef struct {
   GLuint vb;
 } GLBufferState;
 std::map<int, GLBufferState> gBufferState;
+typedef struct {
+  std::map<std::string, GLint> attribs;
+  std::map<std::string, GLint> uniforms;
+} GLProgramState;
+GLProgramState gGLProgramState;
 
 Scene::Scene(Shader &shader): ourShader(shader) {
   width = 800;
@@ -75,15 +81,17 @@ void Scene::setWidthAndHeight(int w, int h) {
 
 void Scene::loadModel(glm::mat4 &view, int elem) {
   tinygltf::Model model;
+  elem = 9;
   std::string modelNumber = std::to_string(elem);
   std::string folderName = "";
 
   std::string altFileName2 = "resources/deccer-cubes/SM_Deccer_Cubes_Textured.gltf";
-  std::string altFileName1 = "resources/models/insane_single_sphere.gltf";
+  std::string altFileName1 = "resources/models/simplified_mesh.gltf";
   std::string altFileName = "resources/models/wheel_with_two_objects.gltf";
+  std::string house = "resources/models/cubehierarchy.gltf";
   std::string filename = "resources/models/test" + modelNumber + "/" + modelNumber + ".gltf";
   std::cout << "Attempting to load " << filename << " " << std::endl;
-  if (!loadGltf(model, altFileName.c_str())) {
+  if (!loadGltf(model, filename.c_str())) {
     std::cout << getexepath() << std::endl;
     std::cout << "File could not be found " << filename << " " << std::endl;
     return;
@@ -112,36 +120,39 @@ void Scene::drawNode(tinygltf::Model &model, const tinygltf::Node &node, glm::ma
             gltf_mat[j/4][j%4] = static_cast<float>(node.matrix[j]);
         }
         */
-        matrix = glm::make_mat4x4(node.matrix.data());
-        matrix = matrix * gltf_mat;
+        gltf_mat = glm::make_mat4x4(node.matrix.data());
+        gltf_mat = matrix * gltf_mat;
       } else {
         if(node.translation.size() == 3) {
-          t = glm::translate(matrix, glm::vec3(node.translation[0], node.translation[1], node.translation[2]));
+          matrix = glm::translate(matrix, glm::vec3(glm::make_vec3(node.translation.data())));
         }
         if (node.rotation.size() == 4) {
           glm::quat q = glm::make_quat(node.rotation.data());
-          r = glm::mat4(q);
+          matrix *= glm::mat4_cast(q);
         }
         if(node.scale.size() == 3) {
-          s = glm::scale(matrix, glm::vec3(glm::make_vec3(node.scale.data())));
+          std::cout << "Scale value" << std::endl;
+          matrix = glm::scale(matrix, glm::vec3(glm::make_vec3(node.scale.data())));
         }
-        matrix =  t * r * s * matrix;
+        gltf_mat =  matrix;
       }
 
       for(size_t i = 0; i < node.children.size(); ++i)
       {
         const tinygltf::Node child = model.nodes[node.children[i]];
-        drawNode(model, child, matrix, vbos);
+        drawNode(model, child, gltf_mat, vbos);
       }
 
       if(node.mesh > -1) {
         tinygltf::Mesh &mesh = model.meshes[node.mesh];
         std::cout << "Drawing Mesh " << node.name << " " << mesh.name << " " << std::endl;
-        drawMesh(mesh, model, matrix, vbos);
+        drawMesh(mesh, model, gltf_mat, vbos);
       }
 }
 
 void Scene::drawMesh(tinygltf::Mesh &mesh, tinygltf::Model &model, glm::mat4 matrix, std::map<int, GLuint> vbos) {
+  std::cout << "count " << count << std::endl;
+  count += 1;
   ourShader.use();
   projection = glm::perspective(glm::radians(30.0f), (float)(width / height), 0.04991f, 10000000.0f);
 
@@ -161,6 +172,14 @@ void Scene::drawMesh(tinygltf::Mesh &mesh, tinygltf::Model &model, glm::mat4 mat
           int size = 1;
           if (accessor.type != TINYGLTF_TYPE_SCALAR) {
             size = accessor.type;
+          } else if (accessor.type == TINYGLTF_TYPE_VEC2) {
+            size = 2;
+          } else if (accessor.type == TINYGLTF_TYPE_VEC3) {
+            size = 3;
+          } else if (accessor.type == TINYGLTF_TYPE_VEC4) {
+            size = 4;
+          } else {
+            assert(0);
           }
 
           int vaa = -1;
@@ -170,16 +189,14 @@ void Scene::drawMesh(tinygltf::Mesh &mesh, tinygltf::Model &model, glm::mat4 mat
           if (attrib.first.compare("COLOR_0") == 0) vaa = 3;
           if (attrib.first.compare("TANGENT") == 0) vaa = 4;
           if(vaa > -1) {
+              glEnableVertexAttribArray(vaa);
               glVertexAttribPointer(vaa, size, accessor.componentType,
                                     accessor.normalized ? GL_TRUE : GL_FALSE,
                                     byteStride, BUFFER_OFFSET(accessor.byteOffset));
-              glEnableVertexAttribArray(vaa);
+              gGLProgramState.attribs[attrib.first] = vaa;
           }
       }
-  }
 
-  for (size_t i = 0; i < mesh.primitives.size(); ++i) {
-      tinygltf::Primitive primitive = mesh.primitives[i];
       if(primitive.material >= 0) {
         tinygltf::Material &mat = model.materials[primitive.material];
         setMaterials(mat, ourShader);
@@ -197,7 +214,6 @@ void Scene::drawMesh(tinygltf::Mesh &mesh, tinygltf::Model &model, glm::mat4 mat
           exit(0);
         } else {
           glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, gBufferState[indexAccessor.bufferView].vb);
-          std::cout << "Mesh: Index count" << indexAccessor.count << " " << std::endl;
           int mode = -1;
           if (primitive.mode == TINYGLTF_MODE_TRIANGLES) {
             mode = GL_TRIANGLES;
@@ -214,13 +230,41 @@ void Scene::drawMesh(tinygltf::Mesh &mesh, tinygltf::Model &model, glm::mat4 mat
           } else {
             assert(0);
           }
+
+          std::cout << "Mesh: Index count " << indexAccessor.count << " " << indexAccessor.componentType << " " << std::endl;
           glDrawElements(mode, indexAccessor.count, indexAccessor.componentType, BUFFER_OFFSET(indexAccessor.byteOffset));
+
           // v3: glDrawElements(primitive.mode, indexAccessor.count, indexAccessor.componentType, reinterpret_cast<void*>(0 + indexAccessor.byteOffset));
           //glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
         }
       }
-
   }
+  glDisableVertexAttribArray(0);
+  glDisableVertexAttribArray(1);
+  glDisableVertexAttribArray(2);
+  glDisableVertexAttribArray(3);
+  glDisableVertexAttribArray(4);
+  std::cout << "End render" << std::endl;
+
+  /*
+  {
+    for (size_t i = 0; i < mesh.primitives.size(); ++i) {
+        tinygltf::Primitive primitive = mesh.primitives[i];
+        int vaa = -1;
+        for (auto &attrib : primitive.attributes) {
+          if (attrib.first.compare("POSITION") == 0) vaa = 0;
+          if (attrib.first.compare("NORMAL") == 0) vaa = 1;
+          if (attrib.first.compare("TEXCOORD_0") == 0) vaa = 2;
+          if (attrib.first.compare("COLOR_0") == 0) vaa = 3;
+          if (attrib.first.compare("TANGENT") == 0) vaa = 4;
+          if(vaa >= 0) {
+            glDisableVertexAttribArray(gGLProgramState.attribs[attrib.first]);
+          }
+        }
+      }
+  }
+  */
+
 }
 
 void Scene::setMaterials(tinygltf::Material &material, Shader& ourShader) {
@@ -318,6 +362,7 @@ void Scene::drawScene(glm::mat4 &viewParam) {
 
   setView(viewParam);
   glm::mat4 model_mat(1.0f);
+  count = 0;
   std::cout << "START" << std::endl;
   for (const tinygltf::Scene& scene : internalModel.scenes) {
     for(size_t i = 0; i < scene.nodes.size(); i++) {
@@ -359,7 +404,6 @@ void Scene::bindModelNodes(std::map<int, GLuint>& vbos, tinygltf::Model &model, 
 
 void Scene::bindMesh(std::map<int, GLuint>& vbos,
                       tinygltf::Model &model, tinygltf::Mesh &mesh) {
-
   for(size_t i = 0; i < model.bufferViews.size(); ++i) {
     const tinygltf::BufferView &bufferView = model.bufferViews[i];
     if(bufferView.target == 0) {
