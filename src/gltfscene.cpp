@@ -81,7 +81,7 @@ void Scene::setWidthAndHeight(int w, int h) {
 
 void Scene::loadModel(glm::mat4 &view, int elem) {
   tinygltf::Model model;
-  elem = 9;
+  elem = 16;
   std::string modelNumber = std::to_string(elem);
   std::string folderName = "";
 
