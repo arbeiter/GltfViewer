@@ -61,20 +61,10 @@ vec3 fresnel_schlick(vec3 f0, vec3 H, vec3 V) {
     return f0 + (1.0 - f0) * pow(1.0 - max(dot(H, V), 0.0), 5.0);
 }
 
-vec3 LinearSRGB(vec3 c) {
-  float power = 2.2;
-  return pow(c, vec3(power));
-}
-
-vec3 SRGBLinear(vec3 c) {
-  float power = 1.0 /2.2;
-  return pow(c, vec3(power));
-}
-
 void main() {
   float gamma = 2.2;
 
-  vec3 baseColor = texture2D(samp_tex, texCoord).rgb;
+  vec3 baseColor = pow(texture2D(samp_tex, texCoord).rgb, vec3(gamma));
   float roughness = texture2D(metallicTex, texCoord).g;
   float metallicFactor = texture2D(metallicTex, texCoord).b;
   vec3 lightColor = vec3(1.0, 1.0, 1.0);
@@ -100,8 +90,9 @@ void main() {
   vec3 result = (diffuse + specular) * lightColor * max(dot(N, L), 0.0);
 
   // ambient lighting
-  result += vec3(0.33) * baseColor.rgb;
+  result += vec3(0.03) * baseColor.rgb;
+  result = pow(result, vec3(1.0/gamma));
 
   // gamma correction
-  FragColor = vec4(SRGBLinear(result), 1.0f);
+  FragColor = vec4(result, 1.0f);
 }

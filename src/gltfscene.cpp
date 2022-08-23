@@ -81,7 +81,7 @@ void Scene::setWidthAndHeight(int w, int h) {
 
 void Scene::loadModel(glm::mat4 &view, int elem) {
   tinygltf::Model model;
-  elem = 6;
+  elem = 16;
   std::string modelNumber = std::to_string(elem);
   std::string folderName = "";
 
@@ -349,7 +349,7 @@ void Scene::setMaterials(tinygltf::Material &material, Shader& ourShader) {
   ourShader.setBool("isRoughFactorAbsent", isRoughFactorAbsent);
   ourShader.setBool("isMetallicTexturePresent", isMetallicTexturePresent);
   ourShader.setBool("isNormalTexturePresent", isNormalTexturePresent);
-  std::cout << "XIDC " << isBaseColorAbsent << " " << isRoughFactorAbsent << " " << isMetallicTexturePresent << " " << isNormalTexturePresent << std::endl;
+  //std::cout << "XIDC " << isBaseColorAbsent << " " << isRoughFactorAbsent << " " << isMetallicTexturePresent << " " << isNormalTexturePresent << std::endl;
 }
 
 void Scene::setView(glm::mat4 &viewParam) {
