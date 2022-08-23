@@ -43,10 +43,11 @@ struct PBRInfo {
 const float PI = 3.14159265359;
 float DistributionGGX(vec3 N, vec3 H, float roughness)
 {
-    float a = roughness*roughness;
-    float a2 = a*a;
     float NdotH = max(dot(N, H), 0.0);
     float NdotH2 = NdotH*NdotH;
+
+    float a = roughness*roughness;
+    float a2 = a*a;
 
     float nom   = a2;
     float denom = (NdotH2 * (a2 - 1.0) + 1.0);
@@ -183,7 +184,6 @@ PointLight generatePointLight(PointLight light) {
 void main() {
     PBRInfo pbrInfo;
     PointLight light;
-
     light = generatePointLight(light);
     pbrInfo = generatePBRInfo(pbrInfo);
 
@@ -198,8 +198,10 @@ void main() {
 
     if(isMetallicTexturePresent) {
       vec4 metal_color = texture2D(metallicTex, texCoord);
-      r = metal_color.g * roughFactor;
-      m = metal_color.b * metallicFactor;
+      r = metal_color;
+      m = metal_color;
+      //FragColor = vec4(vec3(m), 1.0f);
+      //return;
     } else {
       r = roughFactor;
       m = metallicFactor;
@@ -211,9 +213,8 @@ void main() {
       //return;
     }
 
-    pbrInfo.roughness = r;
-    pbrInfo.metallic = m;
-
+    pbrInfo.roughness = 0.1f;
+    pbrInfo.metallic = 0.2f;
     pbrInfo.baseColor = vec3(base_color.rgb); //* v_color;
     vec3 color = gltfSpecVersion(light, pbrInfo);
     FragColor = vec4(SRGBLinear(color), 1.0f);

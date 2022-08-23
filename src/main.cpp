@@ -30,9 +30,9 @@ void initImgUi(Window &window);
 int drawGui(int &selectedModel);
 
 void displayLoop(Window &window) {
-    Shader ourShader("shader.vert", "shader.frag"); // you can name your shader files however you like
+    Shader ourShader("shader.vert", "pbr_shader_simplified.frag"); // you can name your shader files however you like
     std::string shader_vert_path = "shader.vert";
-    std::string shader_frag_path = "shader.frag";
+    std::string shader_frag_path = "pbr_shader_simplified.frag";
     glm::mat4 view = camera.transform();
     Scene scene = Scene(ourShader);
     glEnable(GL_DEPTH_TEST);
@@ -158,7 +158,6 @@ void initImgUi(Window &window) {
 
 int ShowStyleSelector(const char* label, int &model_number)
 {
-  return 11;
     if (ImGui::Combo(label, &model_number, "A\0B\0C\0D\0E\0F\0G\0"))
     {
         switch (model_number)

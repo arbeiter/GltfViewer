@@ -81,7 +81,7 @@ void Scene::setWidthAndHeight(int w, int h) {
 
 void Scene::loadModel(glm::mat4 &view, int elem) {
   tinygltf::Model model;
-  elem = 16;
+  elem = 6;
   std::string modelNumber = std::to_string(elem);
   std::string folderName = "";
 
@@ -268,6 +268,7 @@ void Scene::drawMesh(tinygltf::Mesh &mesh, tinygltf::Model &model, glm::mat4 mat
 }
 
 void Scene::setMaterials(tinygltf::Material &material, Shader& ourShader) {
+
   bool isBaseColorAbsent = true;
   bool isMetallicFactorAbsent = true;
   bool isRoughFactorAbsent = true;
@@ -310,7 +311,7 @@ void Scene::setMaterials(tinygltf::Material &material, Shader& ourShader) {
     {
       float number = value.second.number_value;
       ourShader.setFloat("metallicFactor", number);
-      isMetallicFactorAbsent = false;
+      isMetallicTexturePresent = true;
     }
     else if (value.first == "roughnessFactor")
     {
@@ -348,6 +349,7 @@ void Scene::setMaterials(tinygltf::Material &material, Shader& ourShader) {
   ourShader.setBool("isRoughFactorAbsent", isRoughFactorAbsent);
   ourShader.setBool("isMetallicTexturePresent", isMetallicTexturePresent);
   ourShader.setBool("isNormalTexturePresent", isNormalTexturePresent);
+  std::cout << "XIDC " << isBaseColorAbsent << " " << isRoughFactorAbsent << " " << isMetallicTexturePresent << " " << isNormalTexturePresent << std::endl;
 }
 
 void Scene::setView(glm::mat4 &viewParam) {
