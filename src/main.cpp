@@ -6,6 +6,7 @@
 #include <ostream>
 #include <vector>
 #include "arcball.h"
+#include "camera.h"
 #include "gltfscene.h"
 #include "imgui.h"
 // TODO: Backends should be imgui/backends. Fix this
@@ -22,6 +23,8 @@ glm::vec2 prev_mouse(-2.f);
 
 float zoom_amount = 1;
 ArcballCamera camera(eye, center, up);
+Camera quat_camera(center);
+
 void mouse_callback(GLFWwindow* window, double xpos, double ypos);
 void processInput(GLFWwindow *window);
 int ShowStyleSelector(const char* label, int &selectedLabel);
@@ -33,7 +36,7 @@ void displayLoop(Window &window) {
     Shader ourShader("shader.vert", "pbr_shader_simplified.frag"); // you can name your shader files however you like
     std::string shader_vert_path = "shader.vert";
     std::string shader_frag_path = "pbr_shader_simplified.frag";
-    glm::mat4 view = camera.transform();
+    glm::mat4 view = quat_camera.getViewMatrix();
     Scene scene = Scene(ourShader);
     glEnable(GL_DEPTH_TEST);
     glDepthFunc(GL_LESS);
@@ -55,7 +58,7 @@ void displayLoop(Window &window) {
         glEnable(GL_DEPTH_TEST);
 
         // Draw scene
-        view = camera.transform();
+        view = quat_camera.getViewMatrix();
         scene.setWidthAndHeight(curr_width, curr_height);
         int currentModel = drawGui(selectedModel);
         if(currentModel != selectedModel) {
@@ -65,7 +68,6 @@ void displayLoop(Window &window) {
         }
 
         scene.drawScene(view);
-
         glfwSwapBuffers(window.window);
         glfwPollEvents();
     }
@@ -99,10 +101,18 @@ void processInput(GLFWwindow *window)
     glm::vec2 c_mouse(-0.005f);
     if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
       glfwSetWindowShouldClose(window, true);
-    if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
-      camera.pan(p_mouse);
-    if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
-      camera.pan(c_mouse);
+    if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS) {
+      quat_camera.processKeyboard(Camera_Movement::FORWARD, 0.01);
+    }
+    if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS) {
+      quat_camera.processKeyboard(Camera_Movement::BACKWARD, 0.01);
+    }
+    if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS) {
+      quat_camera.processKeyboard(Camera_Movement::RIGHT, 0.01);
+    }
+    if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS) {
+      quat_camera.processKeyboard(Camera_Movement::LEFT, 0.01);
+    }
 }
 
 glm::vec2 transform_mouse(int h, int w, glm::vec2 in)
@@ -120,6 +130,7 @@ void mouse_callback(GLFWwindow* window, double xposIn, double yposIn)
     float ypos = static_cast<float>(yposIn);
 
     const glm::vec2 cur_mouse = transform_mouse(*screen_height, *screen_width, glm::vec2(xpos, ypos));
+    //quat_camera.processMouseMovement(xpos, ypos);
     if(prev_mouse != glm::vec2(-2.f)) {
       camera.rotate(prev_mouse, cur_mouse);
     }
