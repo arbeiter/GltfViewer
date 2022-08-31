@@ -3,6 +3,8 @@ add_executable(${PROJECT_NAME}
   arcball.cpp
   shader.h
   main.cpp
+  camera.h
+  camera.cpp
   window.h
   window.cpp
   gltfscene.cpp
