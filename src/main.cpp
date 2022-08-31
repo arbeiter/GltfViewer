@@ -15,6 +15,9 @@
 
 int curr_width = 800;
 int curr_height = 600;
+float lastX = 10;
+float lastY = 10;
+bool isFirstMouse = false;
 
 glm::vec3 eye(0, 0, 5);
 glm::vec3 center(0);
@@ -128,13 +131,17 @@ void mouse_callback(GLFWwindow* window, double xposIn, double yposIn)
 
     float xpos = static_cast<float>(xposIn);
     float ypos = static_cast<float>(yposIn);
-
-    const glm::vec2 cur_mouse = transform_mouse(*screen_height, *screen_width, glm::vec2(xpos, ypos));
-    //quat_camera.processMouseMovement(xpos, ypos);
-    if(prev_mouse != glm::vec2(-2.f)) {
-      camera.rotate(prev_mouse, cur_mouse);
+    if(isFirstMouse) {
+      isFirstMouse = false;
+      lastX = (float)xpos;
+      lastY = (float)ypos;
     }
-    prev_mouse = cur_mouse;
+    float xoffset = (float)(xpos - lastX);
+    float yoffset = (float)(lastY - ypos);
+    lastX = (float)xpos;
+    lastY = (float)ypos;
+
+    quat_camera.processMouseMovement(xoffset, yoffset);
 }
 
 void scroll_callback(GLFWwindow* window, double xoffset, double yoffset) {

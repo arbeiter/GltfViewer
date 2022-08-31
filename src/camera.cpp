@@ -1,24 +1,22 @@
 #include <camera.h>
 
 glm::mat4 Camera::getViewMatrix() {
-  glm::quat reverseOrient = glm::conjugate(orientation);
-  glm::mat4 rot = glm::mat4_cast(reverseOrient);
-  glm::mat4 translation = glm::translate(glm::mat4(1.0), -Position);
-  return rot * translation;
+  glm::mat4 View = glm::mat4_cast(glm::conjugate(orientation));
+  View[3][0] = -(View[0][0] * Position.x + View[1][0] * Position.y + View[2][0] * Position.z);
+  View[3][1] = -(View[0][1] * Position.x + View[1][1] * Position.y + View[2][1] * Position.z);
+  View[3][2] = -(View[0][2] * Position.x + View[1][2] * Position.y + View[2][2] * Position.z);
+
+  return View;
 }
 
 void Camera::processKeyboard(Camera_Movement direction, float deltaTime) {
   float velocity = MovementSpeed * deltaTime;
-
   if (direction == Camera_Movement::FORWARD)
    Position += front * velocity;
-
   if (direction == Camera_Movement::BACKWARD)
    Position -= front * velocity;
-
   if (direction == Camera_Movement::LEFT)
    Position -= right * velocity;
-
   if (direction == Camera_Movement::RIGHT)
    Position += right * velocity;
 }
