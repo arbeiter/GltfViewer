@@ -30,8 +30,10 @@ void Camera::processMouseMovement(float xoffset, float yoffset) {
 }
 
 void Camera::updateCameraVectors() {
+  std::cout << upAngle << " " << rightAngle << " " << std::endl;
   glm::quat aroundY = glm::angleAxis(glm::radians(-rightAngle), glm::vec3(0,1,0));
-  glm::quat aroundX = glm::angleAxis(glm::radians(upAngle), glm::vec3(1,0,0));
+  upAngle = upAngle < -90 ? -90 : upAngle;
+  glm::quat aroundX = glm::angleAxis(glm::radians(-upAngle), glm::vec3(1,0,0));
   orientation = aroundY * aroundX;
   glm::quat qF = orientation * glm::quat(0,0,0,-1) * glm::conjugate(orientation);
   front = { qF.x, qF.y, qF.z };

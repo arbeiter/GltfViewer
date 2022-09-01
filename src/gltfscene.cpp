@@ -90,7 +90,7 @@ void Scene::loadModel(glm::mat4 &view, int elem) {
   std::string altFileName = "resources/models/wheel_with_two_objects.gltf";
   std::string house = "resources/models/cubehierarchy.gltf";
   std::string filename = "resources/models/test" + modelNumber + "/" + modelNumber + ".gltf";
-  std::cout << "Attempting to load " << filename << " " << std::endl;
+  //std::cout << "Attempting to load " << filename << " " << std::endl;
   if (!loadGltf(model, filename.c_str())) {
     std::cout << getexepath() << std::endl;
     std::cout << "File could not be found " << filename << " " << std::endl;
@@ -103,7 +103,7 @@ void Scene::loadModel(glm::mat4 &view, int elem) {
 
 void Scene::drawNode(tinygltf::Model &model, const tinygltf::Node &node, glm::mat4 matrix, std::map<int, GLuint> vbos) {
 
-      std::cout << "Drawing node " << node.name << std::endl;
+      //std::cout << "Drawing node " << node.name << std::endl;
       glm::mat4 t(1.0f);
       glm::mat4 r(1.0f);
       glm::mat4 s(1.0f);
@@ -131,7 +131,7 @@ void Scene::drawNode(tinygltf::Model &model, const tinygltf::Node &node, glm::ma
           matrix *= glm::mat4_cast(q);
         }
         if(node.scale.size() == 3) {
-          std::cout << "Scale value" << std::endl;
+          //std::cout << "Scale value" << std::endl;
           matrix = glm::scale(matrix, glm::vec3(glm::make_vec3(node.scale.data())));
         }
         gltf_mat =  matrix;
@@ -145,13 +145,13 @@ void Scene::drawNode(tinygltf::Model &model, const tinygltf::Node &node, glm::ma
 
       if(node.mesh > -1) {
         tinygltf::Mesh &mesh = model.meshes[node.mesh];
-        std::cout << "Drawing Mesh " << node.name << " " << mesh.name << " " << std::endl;
+        //std::cout << "Drawing Mesh " << node.name << " " << mesh.name << " " << std::endl;
         drawMesh(mesh, model, gltf_mat, vbos);
       }
 }
 
 void Scene::drawMesh(tinygltf::Mesh &mesh, tinygltf::Model &model, glm::mat4 matrix, std::map<int, GLuint> vbos) {
-  std::cout << "count " << count << std::endl;
+  //std::cout << "count " << count << std::endl;
   count += 1;
   ourShader.use();
   projection = glm::perspective(glm::radians(30.0f), (float)(width / height), 0.04991f, 10000000.0f);
@@ -203,7 +203,7 @@ void Scene::drawMesh(tinygltf::Mesh &mesh, tinygltf::Model &model, glm::mat4 mat
       }
 
       if(primitive.indices > -1) {
-        std::cout << "Mesh: Primitive not none" << std::endl;
+        //std::cout << "Mesh: Primitive not none" << std::endl;
 
         tinygltf::Accessor indexAccessor = model.accessors[primitive.indices];
         int buffer_type = model.bufferViews[indexAccessor.bufferView].target;
@@ -231,7 +231,7 @@ void Scene::drawMesh(tinygltf::Mesh &mesh, tinygltf::Model &model, glm::mat4 mat
             assert(0);
           }
 
-          std::cout << "Mesh: Index count " << indexAccessor.count << " " << indexAccessor.componentType << " " << std::endl;
+          //std::cout << "Mesh: Index count " << indexAccessor.count << " " << indexAccessor.componentType << " " << std::endl;
           glDrawElements(mode, indexAccessor.count, indexAccessor.componentType, BUFFER_OFFSET(indexAccessor.byteOffset));
 
           // v3: glDrawElements(primitive.mode, indexAccessor.count, indexAccessor.componentType, reinterpret_cast<void*>(0 + indexAccessor.byteOffset));
@@ -244,7 +244,7 @@ void Scene::drawMesh(tinygltf::Mesh &mesh, tinygltf::Model &model, glm::mat4 mat
   glDisableVertexAttribArray(2);
   glDisableVertexAttribArray(3);
   glDisableVertexAttribArray(4);
-  std::cout << "End render" << std::endl;
+  //std::cout << "End render" << std::endl;
 
   /*
   {
@@ -365,12 +365,9 @@ void Scene::drawScene(glm::mat4 &viewParam) {
   setView(viewParam);
   glm::mat4 model_mat(1.0f);
   count = 0;
-  std::cout << "START" << std::endl;
   for (const tinygltf::Scene& scene : internalModel.scenes) {
     for(size_t i = 0; i < scene.nodes.size(); i++) {
       const tinygltf::Node &node = internalModel.nodes[scene.nodes[i]];
-      std::cout << "Drawing root level " << node.name << std::endl;
-      std::cout << "Drawing root level node " << scene.nodes[i] << std::endl;
       drawNode(internalModel, node, model_mat, vaoAndEbos.second);
     }
   }
