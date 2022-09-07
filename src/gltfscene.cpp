@@ -134,7 +134,7 @@ void Scene::drawNode(tinygltf::Model &model, const tinygltf::Node &node, glm::ma
           //std::cout << "Scale value" << std::endl;
           matrix = glm::scale(matrix, glm::vec3(glm::make_vec3(node.scale.data())));
         }
-        gltf_mat =  matrix;
+        gltf_mat = matrix;
       }
 
       for(size_t i = 0; i < node.children.size(); ++i)
@@ -156,9 +156,13 @@ void Scene::drawMesh(tinygltf::Mesh &mesh, tinygltf::Model &model, glm::mat4 mat
   ourShader.use();
   projection = glm::perspective(glm::radians(30.0f), (float)(width / height), 0.04991f, 10000000.0f);
 
+
   ourShader.setMat4("model", matrix);
   ourShader.setMat4("view", view);
   ourShader.setMat4("projection", projection);
+
+  glm::mat3 mvi = glm::mat3(glm::transpose(glm::inverse(matrix * view)));
+  ourShader.setMat3("MVI", mvi);
 
   for (size_t i = 0; i < mesh.primitives.size(); ++i) {
       tinygltf::Primitive primitive = mesh.primitives[i];
