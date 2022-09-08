@@ -81,7 +81,7 @@ void Scene::setWidthAndHeight(int w, int h) {
 
 void Scene::loadModel(glm::mat4 &view, int elem) {
   tinygltf::Model model;
-  elem = 16;
+  elem = 17;
   std::string modelNumber = std::to_string(elem);
   std::string folderName = "";
 
@@ -99,6 +99,115 @@ void Scene::loadModel(glm::mat4 &view, int elem) {
 
   vaoAndEbos = bindCrude(model);
   internalModel = model;
+}
+
+std::pair<GLuint, std::map<int, GLuint>> Scene::bindCrude(tinygltf::Model &model) {
+  GLuint vao;
+  std::map<int, GLuint> vbos;
+  glGenVertexArrays(1, &vao);
+  glBindVertexArray(vao);
+
+  const tinygltf::Scene &scene = model.scenes[model.defaultScene];
+  for(size_t i = 0; i < scene.nodes.size(); ++i) {
+    tinygltf::Node &node = model.nodes[scene.nodes[i]];
+    bindModelNodes(vbos, model, node);
+  }
+
+  return {vao, vbos};
+}
+
+void Scene::bindModelNodes(std::map<int, GLuint>& vbos, tinygltf::Model &model, tinygltf::Node &node) {
+  // for node in nodes
+  // if termination condition, bindMesh
+  if ((node.mesh >= 0) && (node.mesh < model.meshes.size())) {
+    bindMesh(vbos, model, model.meshes[node.mesh]);
+  }
+
+  for (size_t i = 0; i < node.children.size(); i++) {
+    assert((node.children[i] >= 0) && (node.children[i] < model.nodes.size()));
+    bindModelNodes(vbos, model, model.nodes[node.children[i]]);
+  }
+}
+
+void Scene::bindMesh(std::map<int, GLuint>& vbos, tinygltf::Model &model, tinygltf::Mesh &mesh) {
+  for(size_t i = 0; i < model.bufferViews.size(); ++i) {
+    const tinygltf::BufferView &bufferView = model.bufferViews[i];
+    if(bufferView.target == 0) {
+      std::cout << "WARN" << std::endl;
+      continue;
+    }
+
+    int sparse_accessor = -1;
+    for (size_t a_i = 0; a_i < model.accessors.size(); ++a_i) {
+        const auto &accessor = model.accessors[a_i];
+        if (accessor.bufferView == i) {
+          // std::cout << i << " is used by accessor " << a_i << std::endl;
+          if (accessor.sparse.isSparse) {
+            std::cout
+                << "WARN: this bufferView has at least one sparse accessor to "
+                   "it. We are NOT going to load the data as patched by this "
+                   "sparse accessor"
+                << std::endl;
+            sparse_accessor = a_i;
+            exit(0);
+          }
+        }
+    }
+
+    const tinygltf::Buffer &buffer = model.buffers[bufferView.buffer];
+    GLBufferState state;
+    glGenBuffers(1, &state.vb);
+    glBindBuffer(bufferView.target, state.vb);
+    glBufferData(bufferView.target, bufferView.byteLength,
+                 &buffer.data.at(0) + bufferView.byteOffset,
+                 GL_STATIC_DRAW);
+    glBindBuffer(bufferView.target, 0);
+    gBufferState[i] = state;
+  }
+
+  if (model.textures.size() > 0) {
+    loadTextures(model);
+  }
+}
+
+void Scene::loadTextures(tinygltf::Model &model) {
+    const std::vector<tinygltf::Texture>& textures = model.textures;
+    for(const tinygltf::Texture& texture : textures) {
+      if (texture.source > -1) {
+        GLuint texid;
+        glGenTextures(1, &texid);
+
+        tinygltf::Image &image = model.images[texture.source];
+
+        glBindTexture(GL_TEXTURE_2D, texid);
+        glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+        glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+        //TODO: Remove if line above broken: glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+        glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+
+        GLenum format = GL_RGBA;
+        if (image.component == 1) {
+          format = GL_RED;
+        } else if (image.component == 2) {
+          format = GL_RG;
+        } else if (image.component == 3) {
+          format = GL_RGB;
+        }
+
+        GLenum type = GL_UNSIGNED_BYTE;
+        if (image.bits == 16) {
+          type = GL_UNSIGNED_SHORT;
+        }
+
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, image.width, image.height, 0,
+                     format, type, &image.image.at(0));
+        glGenerateMipmap(GL_TEXTURE_2D);
+        allTextures.push_back(texid);
+        glBindTexture(GL_TEXTURE_2D, 0);
+      }
+    }
 }
 
 void Scene::drawNode(tinygltf::Model &model, const tinygltf::Node &node, glm::mat4 matrix, std::map<int, GLuint> vbos) {
@@ -153,7 +262,6 @@ void Scene::drawNode(tinygltf::Model &model, const tinygltf::Node &node, glm::ma
 void Scene::drawMesh(tinygltf::Mesh &mesh, tinygltf::Model &model, glm::mat4 matrix, std::map<int, GLuint> vbos) {
   //std::cout << "count " << count << std::endl;
   count += 1;
-  ourShader.use();
   projection = glm::perspective(glm::radians(30.0f), (float)(width / height), 0.04991f, 10000000.0f);
 
 
@@ -201,10 +309,6 @@ void Scene::drawMesh(tinygltf::Mesh &mesh, tinygltf::Model &model, glm::mat4 mat
           }
       }
 
-      if(primitive.material >= 0) {
-        tinygltf::Material &mat = model.materials[primitive.material];
-        setMaterials(mat, ourShader);
-      }
 
       if(primitive.indices > -1) {
         //std::cout << "Mesh: Primitive not none" << std::endl;
@@ -235,6 +339,10 @@ void Scene::drawMesh(tinygltf::Mesh &mesh, tinygltf::Model &model, glm::mat4 mat
             assert(0);
           }
 
+          if(primitive.material >= 0) {
+            tinygltf::Material &mat = model.materials[primitive.material];
+            setMaterials(mat, ourShader);
+          }
           //std::cout << "Mesh: Index count " << indexAccessor.count << " " << indexAccessor.componentType << " " << std::endl;
           glDrawElements(mode, indexAccessor.count, indexAccessor.componentType, BUFFER_OFFSET(indexAccessor.byteOffset));
 
@@ -286,7 +394,7 @@ void Scene::setMaterials(tinygltf::Material &material, Shader& ourShader) {
     if (value.first == "baseColorTexture")
     {
         if (value.second.TextureIndex() > -1) {
-            glActiveTexture(GL_TEXTURE0 + 0);
+            glActiveTexture(GL_TEXTURE0);
             glBindTexture(GL_TEXTURE_2D, allTextures[value.second.TextureIndex()]);
         }
         isbaseColorTexturePresent = true;
@@ -294,7 +402,7 @@ void Scene::setMaterials(tinygltf::Material &material, Shader& ourShader) {
     else if (value.first == "metallicRoughnessTexture")
     {
         if (value.second.TextureIndex() > -1) {
-          glActiveTexture(GL_TEXTURE0 + 2);
+          glActiveTexture(GL_TEXTURE0 + value.second.TextureIndex());
           glBindTexture(GL_TEXTURE_2D, allTextures[value.second.TextureIndex()]);
         }
         isMetallicTexturePresent = true;
@@ -345,7 +453,7 @@ void Scene::setMaterials(tinygltf::Material &material, Shader& ourShader) {
     if (value.first == "normalTexture")
     {
       isNormalTexturePresent = true;
-      glActiveTexture(GL_TEXTURE0 + 1);
+      glActiveTexture(GL_TEXTURE0 + value.second.TextureIndex());
       glBindTexture(GL_TEXTURE_2D, allTextures[value.second.TextureIndex()]);
     }
   }
@@ -375,114 +483,4 @@ void Scene::drawScene(glm::mat4 &viewParam) {
       drawNode(internalModel, node, model_mat, vaoAndEbos.second);
     }
   }
-}
-
-std::pair<GLuint, std::map<int, GLuint>> Scene::bindCrude(tinygltf::Model &model) {
-  GLuint vao;
-  std::map<int, GLuint> vbos;
-  glGenVertexArrays(1, &vao);
-  glBindVertexArray(vao);
-
-  const tinygltf::Scene &scene = model.scenes[model.defaultScene];
-  for(size_t i = 0; i < scene.nodes.size(); ++i) {
-    tinygltf::Node &node = model.nodes[scene.nodes[i]];
-    bindModelNodes(vbos, model, node);
-  }
-
-  return {vao, vbos};
-}
-
-void Scene::bindModelNodes(std::map<int, GLuint>& vbos, tinygltf::Model &model, tinygltf::Node &node) {
-  // for node in nodes
-  // if termination condition, bindMesh
-  if ((node.mesh >= 0) && (node.mesh < model.meshes.size())) {
-    bindMesh(vbos, model, model.meshes[node.mesh]);
-  }
-
-  for (size_t i = 0; i < node.children.size(); i++) {
-    assert((node.children[i] >= 0) && (node.children[i] < model.nodes.size()));
-    bindModelNodes(vbos, model, model.nodes[node.children[i]]);
-  }
-}
-
-void Scene::bindMesh(std::map<int, GLuint>& vbos,
-                      tinygltf::Model &model, tinygltf::Mesh &mesh) {
-  for(size_t i = 0; i < model.bufferViews.size(); ++i) {
-    const tinygltf::BufferView &bufferView = model.bufferViews[i];
-    if(bufferView.target == 0) {
-      std::cout << "WARN" << std::endl;
-      continue;
-    }
-
-    int sparse_accessor = -1;
-    for (size_t a_i = 0; a_i < model.accessors.size(); ++a_i) {
-        const auto &accessor = model.accessors[a_i];
-        if (accessor.bufferView == i) {
-          // std::cout << i << " is used by accessor " << a_i << std::endl;
-          if (accessor.sparse.isSparse) {
-            std::cout
-                << "WARN: this bufferView has at least one sparse accessor to "
-                   "it. We are NOT going to load the data as patched by this "
-                   "sparse accessor"
-                << std::endl;
-            sparse_accessor = a_i;
-            exit(0);
-          }
-        }
-    }
-
-    const tinygltf::Buffer &buffer = model.buffers[bufferView.buffer];
-    GLBufferState state;
-    glGenBuffers(1, &state.vb);
-    glBindBuffer(bufferView.target, state.vb);
-    glBufferData(bufferView.target, bufferView.byteLength,
-                 &buffer.data.at(0) + bufferView.byteOffset,
-                 GL_STATIC_DRAW);
-    glBindBuffer(bufferView.target, 0);
-    gBufferState[i] = state;
-  }
-
-
-  if (model.textures.size() > 0) {
-    loadTextures(model);
-  }
-}
-
-void Scene::loadTextures(tinygltf::Model &model) {
-    const std::vector<tinygltf::Texture>& textures = model.textures;
-    for(const tinygltf::Texture& texture : textures) {
-      if (texture.source > -1) {
-        GLuint texid;
-        glGenTextures(1, &texid);
-
-        tinygltf::Image &image = model.images[texture.source];
-
-        glBindTexture(GL_TEXTURE_2D, texid);
-        glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
-        glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
-        //TODO: Remove if line above broken: glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-        glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-
-        GLenum format = GL_RGBA;
-        if (image.component == 1) {
-          format = GL_RED;
-        } else if (image.component == 2) {
-          format = GL_RG;
-        } else if (image.component == 3) {
-          format = GL_RGB;
-        }
-
-        GLenum type = GL_UNSIGNED_BYTE;
-        if (image.bits == 16) {
-          type = GL_UNSIGNED_SHORT;
-        }
-
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, image.width, image.height, 0,
-                     format, type, &image.image.at(0));
-        glGenerateMipmap(GL_TEXTURE_2D);
-        allTextures.push_back(texid);
-      }
-    }
 }
