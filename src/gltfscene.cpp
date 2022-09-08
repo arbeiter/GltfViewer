@@ -182,7 +182,6 @@ void Scene::loadTextures(tinygltf::Model &model) {
         glBindTexture(GL_TEXTURE_2D, texid);
         glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
         glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
-        //TODO: Remove if line above broken: glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
         glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
@@ -402,7 +401,7 @@ void Scene::setMaterials(tinygltf::Material &material, Shader& ourShader) {
     else if (value.first == "metallicRoughnessTexture")
     {
         if (value.second.TextureIndex() > -1) {
-          glActiveTexture(GL_TEXTURE0 + value.second.TextureIndex());
+          glActiveTexture(GL_TEXTURE0 + 1);
           glBindTexture(GL_TEXTURE_2D, allTextures[value.second.TextureIndex()]);
         }
         isMetallicTexturePresent = true;
@@ -453,7 +452,7 @@ void Scene::setMaterials(tinygltf::Material &material, Shader& ourShader) {
     if (value.first == "normalTexture")
     {
       isNormalTexturePresent = true;
-      glActiveTexture(GL_TEXTURE0 + value.second.TextureIndex());
+      glActiveTexture(GL_TEXTURE0 + 2);
       glBindTexture(GL_TEXTURE_2D, allTextures[value.second.TextureIndex()]);
     }
   }
