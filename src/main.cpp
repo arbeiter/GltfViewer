@@ -252,11 +252,11 @@ int main(int argc, char **argv)
   glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
   glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 6);
   glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-#ifdef ENABLE_DEBUG_MACRO
+#ifdef NDEBUG
+  printf("Running in release mode\n");
+#else
   glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, true);
   printf("Running in debug mode\n");
-#else
-  printf("Running in release mode\n");
 #endif
 
   Window window = Window(800, 600, "TinyGLTF basic example");
