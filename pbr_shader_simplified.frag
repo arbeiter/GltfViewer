@@ -4,6 +4,7 @@ in vec3 camPos;
 in vec3 world_pos;
 in vec3 v_normal;
 in vec3 v_color;
+in mat3 tbn;
 uniform vec3 base_color_provided;
 
 uniform float metallicFactor;
@@ -64,12 +65,15 @@ vec3 fresnel_schlick(vec3 f0, vec3 H, vec3 V) {
 void main() {
   float gamma = 2.2;
 
-  vec3 baseColor = pow(texture2D(samp_tex, texCoord).rgb, vec3(gamma));
+  vec4 col = texture2D(samp_tex, texCoord);
+  vec3 colrgb = col.rgb;
+  vec3 baseColor = pow(colrgb, vec3(gamma));
   float roughness = texture2D(metallicTex, texCoord).g;
   float metallicFactor = texture2D(metallicTex, texCoord).b;
   vec3 lightColor = vec3(1.0, 1.0, 1.0);
 
-  vec3 N = normalize(v_normal);
+  vec3 tempNormalVec = normalize(texture(normalTex, texCoord).rgb * 2.0 - 1.0);
+  vec3 N = normalize(tbn * tempNormalVec);
   vec3 L = normalize(camPos - world_pos);
   vec3 V = normalize(camPos - world_pos);
   vec3 H = normalize(L + V);
@@ -94,5 +98,5 @@ void main() {
   result = pow(result, vec3(1.0/gamma));
 
   // gamma correction
-  FragColor = vec4(result, 1.0f);
+  FragColor = vec4(result, col.w);
 }
