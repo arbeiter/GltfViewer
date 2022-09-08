@@ -5,6 +5,7 @@ in vec3 camPos;
 in vec3 world_pos;
 in vec3 v_normal;
 in vec3 v_color;
+in mat3 tbn;
 uniform vec3 base_color_provided;
 
 uniform float metallicFactor;

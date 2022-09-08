@@ -49,4 +49,5 @@ class Scene
       void drawMesh(tinygltf::Mesh &mesh, tinygltf::Model &model, glm::mat4 matrix, std::map<int, GLuint> vbos);
       void setView(glm::mat4 &viewParam);
       void setWidthAndHeight(int w, int h);
+      void setShader(Shader &shader);
 };

@@ -89,6 +89,7 @@ void Scene::loadModel(glm::mat4 &view, int elem) {
   std::string altFileName1 = "resources/models/simplified_mesh.gltf";
   std::string altFileName = "resources/models/wheel_with_two_objects.gltf";
   std::string house = "resources/models/cubehierarchy.gltf";
+  std::string rock = "resources/models/rock/rock.gltf";
   std::string filename = "resources/models/test" + modelNumber + "/" + modelNumber + ".gltf";
   //std::cout << "Attempting to load " << filename << " " << std::endl;
   if (!loadGltf(model, filename.c_str())) {
@@ -109,17 +110,6 @@ void Scene::drawNode(tinygltf::Model &model, const tinygltf::Node &node, glm::ma
       glm::mat4 s(1.0f);
       glm::mat4 gltf_mat(1.0f);
       if(node.matrix.size() == 16) {
-        /*
-          gltf_mat = glm::mat4(node.matrix[0], node.matrix[1],
-                    node.matrix[2], node.matrix[3], node.matrix[4],
-                    node.matrix[5], node.matrix[6], node.matrix[7],
-                    node.matrix[8], node.matrix[9], node.matrix[10],
-                    node.matrix[11], node.matrix[12], node.matrix[13],
-                    node.matrix[14], node.matrix[15]);
-        for (uint j = 0; j < 16; j++) {
-            gltf_mat[j/4][j%4] = static_cast<float>(node.matrix[j]);
-        }
-        */
         gltf_mat = glm::make_mat4x4(node.matrix.data());
         gltf_mat = matrix * gltf_mat;
       } else {
@@ -131,7 +121,6 @@ void Scene::drawNode(tinygltf::Model &model, const tinygltf::Node &node, glm::ma
           matrix *= glm::mat4_cast(q);
         }
         if(node.scale.size() == 3) {
-          //std::cout << "Scale value" << std::endl;
           matrix = glm::scale(matrix, glm::vec3(glm::make_vec3(node.scale.data())));
         }
         gltf_mat = matrix;
@@ -307,8 +296,8 @@ void Scene::setMaterials(tinygltf::Material &material, Shader& ourShader) {
           (float)value.second.number_array[2],
           (float)value.second.number_array[3]
         };
-        glm::vec3 test = glm::vec3(vec[0], vec[1], vec[2]);
-        ourShader.setVec3("base_color_provided", test);
+        glm::vec4 test = glm::vec4(vec[0], vec[1], vec[2], vec[3]);
+        ourShader.setVec4("base_color_provided", test);
         isBaseColorAbsent = false;
     }
     else if (value.first == "metallicFactor")
@@ -353,7 +342,6 @@ void Scene::setMaterials(tinygltf::Material &material, Shader& ourShader) {
   ourShader.setBool("isRoughFactorAbsent", isRoughFactorAbsent);
   ourShader.setBool("isMetallicTexturePresent", isMetallicTexturePresent);
   ourShader.setBool("isNormalTexturePresent", isNormalTexturePresent);
-  //std::cout << "XIDC " << isBaseColorAbsent << " " << isRoughFactorAbsent << " " << isMetallicTexturePresent << " " << isNormalTexturePresent << std::endl;
 }
 
 void Scene::setView(glm::mat4 &viewParam) {
@@ -446,6 +434,10 @@ void Scene::bindMesh(std::map<int, GLuint>& vbos,
   if (model.textures.size() > 0) {
     loadTextures(model);
   }
+}
+
+void Scene::setShader(Shader &currShader) {
+  ourShader = currShader;
 }
 
 void Scene::loadTextures(tinygltf::Model &model) {
