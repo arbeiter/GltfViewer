@@ -89,9 +89,10 @@ void Scene::loadModel(glm::mat4 &view, int elem) {
   std::string altFileName1 = "resources/models/simplified_mesh.gltf";
   std::string altFileName = "resources/models/wheel_with_two_objects.gltf";
   std::string rock = "resources/models/rock/rock.gltf";
+  std::string cube_normals = "resources/models/flat_plane.gltf";
   std::string filename = "resources/models/test" + modelNumber + "/" + modelNumber + ".gltf";
   //std::cout << "Attempting to load " << filename << " " << std::endl;
-  if (!loadGltf(model, rock.c_str())) {
+  if (!loadGltf(model, cube_normals.c_str())) {
     std::cout << getexepath() << std::endl;
     std::cout << "File could not be found " << filename << " " << std::endl;
     return;
@@ -102,6 +103,7 @@ void Scene::loadModel(glm::mat4 &view, int elem) {
 }
 
 void Scene::setShader(Shader &shader) {
+  ourShader = shader;
   shader.use();
   shader.setInt("samp_tex", 0);
   shader.setInt("metallicTex", 1);
@@ -268,7 +270,7 @@ void Scene::drawNode(tinygltf::Model &model, const tinygltf::Node &node, glm::ma
 void Scene::drawMesh(tinygltf::Mesh &mesh, tinygltf::Model &model, glm::mat4 matrix, std::map<int, GLuint> vbos) {
   //std::cout << "count " << count << std::endl;
   count += 1;
-  projection = glm::perspective(glm::radians(30.0f), (float)(width / height), 0.04991f, 10000000.0f);
+  projection = glm::perspective(glm::radians(30.0f), (float)(width / height), 0.1f, 1000.0f);
 
   ourShader.setMat4("model", matrix);
   ourShader.setMat4("view", view);
@@ -420,6 +422,7 @@ void Scene::setMaterials(tinygltf::Material &material, Shader& ourShader) {
           (float)value.second.number_array[2],
           (float)value.second.number_array[3]
         };
+        // TODO: should be a vec4
         glm::vec3 test = glm::vec3(vec[0], vec[1], vec[2]);
         ourShader.setVec3("base_color_provided", test);
         isBaseColorAbsent = false;
