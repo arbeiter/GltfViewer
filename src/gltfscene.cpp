@@ -99,6 +99,11 @@ void Scene::loadModel(glm::mat4 &view, int elem) {
 
   vaoAndEbos = bindCrude(model);
   internalModel = model;
+  ourShader.use();
+  ourShader.setInt("samp_tex", 0);
+  ourShader.setInt("metallicTex", 1);
+  ourShader.setInt("normalTex", 2);
+
 }
 
 std::pair<GLuint, std::map<int, GLuint>> Scene::bindCrude(tinygltf::Model &model) {
@@ -262,7 +267,6 @@ void Scene::drawMesh(tinygltf::Mesh &mesh, tinygltf::Model &model, glm::mat4 mat
   //std::cout << "count " << count << std::endl;
   count += 1;
   projection = glm::perspective(glm::radians(30.0f), (float)(width / height), 0.04991f, 10000000.0f);
-
 
   ourShader.setMat4("model", matrix);
   ourShader.setMat4("view", view);
