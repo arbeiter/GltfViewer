@@ -81,17 +81,17 @@ void Scene::setWidthAndHeight(int w, int h) {
 
 void Scene::loadModel(glm::mat4 &view, int elem) {
   tinygltf::Model model;
-  elem = 17;
+  elem = 16;
   std::string modelNumber = std::to_string(elem);
   std::string folderName = "";
 
   std::string altFileName2 = "resources/deccer-cubes/SM_Deccer_Cubes_Textured.gltf";
   std::string altFileName1 = "resources/models/simplified_mesh.gltf";
   std::string altFileName = "resources/models/wheel_with_two_objects.gltf";
-  std::string house = "resources/models/cubehierarchy.gltf";
+  std::string rock = "resources/models/rock/rock.gltf";
   std::string filename = "resources/models/test" + modelNumber + "/" + modelNumber + ".gltf";
   //std::cout << "Attempting to load " << filename << " " << std::endl;
-  if (!loadGltf(model, filename.c_str())) {
+  if (!loadGltf(model, rock.c_str())) {
     std::cout << getexepath() << std::endl;
     std::cout << "File could not be found " << filename << " " << std::endl;
     return;
@@ -103,7 +103,6 @@ void Scene::loadModel(glm::mat4 &view, int elem) {
   ourShader.setInt("samp_tex", 0);
   ourShader.setInt("metallicTex", 1);
   ourShader.setInt("normalTex", 2);
-
 }
 
 std::pair<GLuint, std::map<int, GLuint>> Scene::bindCrude(tinygltf::Model &model) {
