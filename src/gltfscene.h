@@ -43,6 +43,7 @@ class Scene
       void bindModelNodes(std::map<int, GLuint>& vbos, tinygltf::Model &model, tinygltf::Node &node);
       void bindMesh(std::map<int, GLuint>& vbos, tinygltf::Model &model, tinygltf::Mesh &mesh);
 
+      void setShader(Shader &shader);
       void setMaterials(tinygltf::Material &material, Shader& ourShader);
       void drawScene(glm::mat4 &viewParam);
       void drawNode(tinygltf::Model &model, const tinygltf::Node &node, glm::mat4 matrix, std::map<int, GLuint> vbos);

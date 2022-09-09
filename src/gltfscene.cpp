@@ -99,10 +99,13 @@ void Scene::loadModel(glm::mat4 &view, int elem) {
 
   vaoAndEbos = bindCrude(model);
   internalModel = model;
-  ourShader.use();
-  ourShader.setInt("samp_tex", 0);
-  ourShader.setInt("metallicTex", 1);
-  ourShader.setInt("normalTex", 2);
+}
+
+void Scene::setShader(Shader &shader) {
+  shader.use();
+  shader.setInt("samp_tex", 0);
+  shader.setInt("metallicTex", 1);
+  shader.setInt("normalTex", 2);
 }
 
 std::pair<GLuint, std::map<int, GLuint>> Scene::bindCrude(tinygltf::Model &model) {

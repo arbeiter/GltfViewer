@@ -86,6 +86,8 @@ static void initGLDebug() {
 
 void displayLoop(Window &window) {
     Shader ourShader("shader.vert", "pbr_shader_simplified.frag"); // you can name your shader files however you like
+    Shader geometryShader("normal.vert", "normal.frag", "normal.gs");
+
     std::string shader_vert_path = "shader.vert";
     std::string shader_frag_path = "pbr_shader_simplified.frag";
     glm::mat4 view = quat_camera.getViewMatrix();
@@ -119,7 +121,12 @@ void displayLoop(Window &window) {
           scene.loadModel(view, selectedModel);
         }
 
+        scene.setShader(ourShader);
         scene.drawScene(view);
+
+        scene.setShader(geometryShader);
+        scene.drawScene(view);
+
         glfwSwapBuffers(window.window);
         glfwPollEvents();
     }
