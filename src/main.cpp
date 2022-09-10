@@ -84,14 +84,14 @@ static void initGLDebug() {
     glDebugMessageControl(GL_DONT_CARE, GL_DONT_CARE, GL_DONT_CARE, 0, nullptr, GL_TRUE);
 }
 
-void displayLoop(Window &window) {
+void displayLoop(Window &window, std::string filename) {
     Shader ourShader("shader.vert", "pbr_shader_simplified.frag"); // you can name your shader files however you like
     Shader geometryShader("normal.vert", "normal.frag", "normal.gs");
 
     std::string shader_vert_path = "shader.vert";
     std::string shader_frag_path = "pbr_shader_simplified.frag";
     glm::mat4 view = quat_camera.getViewMatrix();
-    Scene scene = Scene(ourShader);
+    Scene scene = Scene(ourShader, filename);
     glEnable(GL_DEPTH_TEST);
     glDepthFunc(GL_LESS);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
@@ -286,7 +286,7 @@ int main(int argc, char **argv)
   }
 
   initImgUi(window);
-  displayLoop(window);
+  displayLoop(window, arg);
   glfwTerminate();
   return 0;
 }

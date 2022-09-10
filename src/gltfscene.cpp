@@ -13,7 +13,8 @@ typedef struct {
 } GLProgramState;
 GLProgramState gGLProgramState;
 
-Scene::Scene(Shader &shader): ourShader(shader) {
+Scene::Scene(Shader &shader, std::string fileName): ourShader(shader) {
+  filename = fileName;
   width = 800;
   height = 600;
   float four_d[16];
@@ -85,14 +86,8 @@ void Scene::loadModel(glm::mat4 &view, int elem) {
   std::string modelNumber = std::to_string(elem);
   std::string folderName = "";
 
-  std::string altFileName2 = "resources/deccer-cubes/SM_Deccer_Cubes_Textured.gltf";
-  std::string altFileName1 = "resources/models/simplified_mesh.gltf";
-  std::string altFileName = "resources/models/wheel_with_two_objects.gltf";
-  std::string rock = "resources/models/rock/rock.gltf";
-  std::string cube_normals = "resources/models/flat_plane.gltf";
-  std::string filename = "resources/models/test" + modelNumber + "/" + modelNumber + ".gltf";
-  //std::cout << "Attempting to load " << filename << " " << std::endl;
-  if (!loadGltf(model, cube_normals.c_str())) {
+  std::cout << "Attempting to load " << filename << " " << std::endl;
+  if (!loadGltf(model, filename.c_str())) {
     std::cout << getexepath() << std::endl;
     std::cout << "File could not be found " << filename << " " << std::endl;
     return;
@@ -387,7 +382,6 @@ void Scene::drawMesh(tinygltf::Mesh &mesh, tinygltf::Model &model, glm::mat4 mat
 }
 
 void Scene::setMaterials(tinygltf::Material &material, Shader& ourShader) {
-
   bool isBaseColorAbsent = true;
   bool isMetallicFactorAbsent = true;
   bool isRoughFactorAbsent = true;

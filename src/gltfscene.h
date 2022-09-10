@@ -21,6 +21,7 @@ class Scene
       glm::mat4 view;
       int width;
       int height;
+      std::string filename;
       const float SCR_WIDTH = 3440.0f;
       const float SCR_HEIGHT = 1440.0f;
 
@@ -33,7 +34,7 @@ class Scene
       glm::mat4 projection;
       Shader ourShader;
 
-      Scene(Shader &ourShader);
+      Scene(Shader &ourShader, std::string resourcePath);
       void loadModel(glm::mat4 &view, int modelNumber);
       void dbgModel(tinygltf::Model &model);
       void loadTextures(tinygltf::Model &model);
