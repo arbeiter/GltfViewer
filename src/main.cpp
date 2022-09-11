@@ -34,6 +34,7 @@ int ShowStyleSelector(const char* label, int &selectedLabel);
 
 void initImgUi(Window &window);
 int drawGui(int &selectedModel);
+void lightingBlob();
 
 static void GLAPIENTRY glDebugCallback(GLenum source, GLenum type, GLuint, GLenum severity, GLsizei,
                                        const GLchar* message, const void*)
@@ -84,6 +85,9 @@ static void initGLDebug() {
     glDebugMessageControl(GL_DONT_CARE, GL_DONT_CARE, GL_DONT_CARE, 0, nullptr, GL_TRUE);
 }
 
+void lightingBlob() {
+}
+
 void displayLoop(Window &window, std::string filename) {
     Shader ourShader("shader.vert", "pbr_shader_simplified.frag"); // you can name your shader files however you like
     Shader geometryShader("normal.vert", "normal.frag", "normal.gs");
@@ -98,11 +102,13 @@ void displayLoop(Window &window, std::string filename) {
     glEnable(GL_BLEND);
     scene.loadModel(view, 1);
     int selectedModel = 1;
+    bool normalsVisible = false;
 
     // Variables to be changed in the ImGUI window
     bool drawTriangle = true;
     float size = 1.0f;
     float color[4] = { 0.8f, 0.3f, 0.02f, 1.0f };
+    lightingBlob();
 
     while (!glfwWindowShouldClose(window.window))
     {
@@ -124,8 +130,10 @@ void displayLoop(Window &window, std::string filename) {
         scene.setShader(ourShader);
         scene.drawScene(view);
 
-        scene.setShader(geometryShader);
-        scene.drawScene(view);
+        if(normalsVisible) {
+          scene.setShader(geometryShader);
+          scene.drawScene(view);
+        }
 
         glfwSwapBuffers(window.window);
         glfwPollEvents();
