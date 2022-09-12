@@ -6,6 +6,7 @@ int count = 0;
 typedef struct {
   GLuint vb;
 } GLBufferState;
+
 std::map<int, GLBufferState> gBufferState;
 typedef struct {
   std::map<std::string, GLint> attribs;
@@ -97,12 +98,13 @@ void Scene::loadModel(glm::mat4 &view, int elem) {
   internalModel = model;
 }
 
-void Scene::setShader(Shader &shader) {
+void Scene::setShader(Shader &shader, glm::vec3 &position) {
   ourShader = shader;
   shader.use();
   shader.setInt("samp_tex", 0);
   shader.setInt("metallicTex", 1);
   shader.setInt("normalTex", 2);
+  shader.setVec3("light_pos", position);
 }
 
 std::pair<GLuint, std::map<int, GLuint>> Scene::bindCrude(tinygltf::Model &model) {

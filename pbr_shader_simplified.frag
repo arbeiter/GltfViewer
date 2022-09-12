@@ -19,6 +19,18 @@ uniform bool isbaseColorTexturePresent;
 uniform bool isMetallicTexturePresent;
 uniform bool isNormalTexturePresent;
 
+#define NR_POINT_LIGHTS 4
+struct PointLight {
+    vec3 position;
+    float constant;
+    float linear;
+    float quadratic;
+    vec3 ambient;
+    vec3 diffuse;
+    vec3 specular;
+};
+uniform PointLight pointLights[NR_POINT_LIGHTS];
+
 const float PI = 3.14159265359;
 layout(location = 0) out vec4 FragColor;
 
@@ -64,39 +76,42 @@ vec3 fresnel_schlick(vec3 f0, vec3 H, vec3 V) {
 
 void main() {
   float gamma = 2.2;
+  float min_roughness = 0.04;
 
   vec4 col = texture2D(samp_tex, texCoord);
   vec3 colrgb = col.rgb;
+
   vec3 baseColor = pow(colrgb, vec3(gamma));
   float roughness = texture2D(metallicTex, texCoord).g;
-  float metallicFactor = texture2D(metallicTex, texCoord).b;
+  float mFactor = texture2D(metallicTex, texCoord).b;
   vec3 lightColor = vec3(1.0, 1.0, 1.0);
-
   vec3 tempNormalVec = normalize(texture(normalTex, texCoord).rgb * 2.0 - 1.0);
   vec3 N = normalize(tbn * tempNormalVec);
-  vec3 L = normalize(camPos - world_pos);
   vec3 V = normalize(camPos - world_pos);
-  vec3 H = normalize(L + V);
+  vec3 f0 = mix(vec3(0.04), baseColor.rgb, mFactor);
+	vec3 result = vec3(0,0,0);
 
-  // albedo
-  vec3 f0 = mix(vec3(0.04), baseColor.rgb, metallicFactor);
+  for(int i = 0; i < NR_POINT_LIGHTS; i++) {
+    vec3 L = normalize(pointLights[i].position - world_pos);
+    N = v_normal;
+    float NdotL = max(dot(N, L), 0);
+    vec3 H = normalize(L + V);
+    vec3 f = fresnel_schlick(f0, H, V);
 
-  // lighting visibility / occlusion
-  float d = DistributionGGX(N, H, roughness);
-  float g = GeometrySmith(N, V, L, roughness);
-  vec3 f = fresnel_schlick(f0, H, V);
+    float perceptual_roughness = clamp(roughness, min_roughness, 1.0);
+    perceptual_roughness = perceptual_roughness * perceptual_roughness;
+    float d = DistributionGGX(N, H, perceptual_roughness);
+    float g = GeometrySmith(N, V, L, perceptual_roughness);
 
-  // specular and diffuse
-  vec3 specular = d * g * f / (4.0 * max(dot(N, V), 0.0) * max(dot(N, L), 0.0) + 0.0001);
-  vec3 diffuse = mix(baseColor.rgb - f, vec3(0.0), metallicFactor);
+    vec3 specular = (d * g * f) / (4.0 * max(dot(N, V), 0.0) * max(dot(N, L), 0.0) + 0.0001);
+    vec3 diffuse = mix(baseColor.rgb - f, vec3(0.0), mFactor);
 
-  // result color
-  vec3 result = (diffuse + specular) * lightColor * max(dot(N, L), 0.0);
+    vec3 temp = vec3(0,0,0);
+    temp += NdotL * pointLights[0].diffuse * (diffuse + specular);
+    temp += vec3(pointLights[0].ambient) * baseColor.rgb;
+    result += temp;
+  }
 
-  // ambient lighting
-  result += vec3(0.03) * baseColor.rgb;
   result = pow(result, vec3(1.0/gamma));
-
-  // gamma correction
   FragColor = vec4(result, col.w);
 }
