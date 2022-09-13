@@ -19,7 +19,6 @@ void Camera::processKeyboard(Camera_Movement direction, float deltaTime) {
    Position -= right * velocity;
   if (direction == Camera_Movement::RIGHT)
    Position += right * velocity;
-  std::cout << " " << Position.x << " " << Position.y << " " << Position.z << "CURR POS" << std::endl;
 }
 
 void Camera::processMouseMovement(float xoffset, float yoffset) {

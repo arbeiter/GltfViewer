@@ -19,6 +19,7 @@ uniform bool isbaseColorTexturePresent;
 uniform bool isMetallicTexturePresent;
 uniform bool isNormalTexturePresent;
 
+
 #define NR_POINT_LIGHTS 4
 struct PointLight {
     vec3 position;
@@ -87,13 +88,17 @@ void main() {
   vec3 lightColor = vec3(1.0, 1.0, 1.0);
   vec3 tempNormalVec = normalize(texture(normalTex, texCoord).rgb * 2.0 - 1.0);
   vec3 N = normalize(tbn * tempNormalVec);
-  vec3 V = normalize(camPos - world_pos);
   vec3 f0 = mix(vec3(0.04), baseColor.rgb, mFactor);
 	vec3 result = vec3(0,0,0);
 
   for(int i = 0; i < NR_POINT_LIGHTS; i++) {
-    vec3 L = normalize(pointLights[i].position - world_pos);
-    N = v_normal;
+    vec3 tangentLightPos = tbn * pointLights[i].position;
+    vec3 tangentViewPos = tbn * camPos;
+    vec3 tangentFragPos  = tbn * world_pos;
+
+    vec3 L = normalize(tangentViewPos - tangentFragPos);
+    vec3 V = normalize(tangentLightPos - tangentFragPos);
+
     float NdotL = max(dot(N, L), 0);
     vec3 H = normalize(L + V);
     vec3 f = fresnel_schlick(f0, H, V);
@@ -105,6 +110,20 @@ void main() {
 
     vec3 specular = (d * g * f) / (4.0 * max(dot(N, V), 0.0) * max(dot(N, L), 0.0) + 0.0001);
     vec3 diffuse = mix(baseColor.rgb - f, vec3(0.0), mFactor);
+    /*
+    float attenuationL = 2.0 * NdotL / (NdotL + sqrt(r * r + (1.0 - r * r) * (NdotL * NdotL)));
+    float attenuationV = 2.0 * NdotV / (NdotV + sqrt(r * r + (1.0 - r * r) * (NdotV * NdotV)));
+    float G = attenuationL * attenuationV;
+    if (lights[i].attributes.x < 2) 
+    {
+      float att = 1.0 / 
+        (lights[i].attenuation.x + 
+        lights[i].attenuation.y * light_dist + 
+        lights[i].attenuation.z * light_dist * light_dist);
+      diffuse *= att;
+      specular *= att;
+    }
+    */
 
     vec3 temp = vec3(0,0,0);
     temp += NdotL * pointLights[0].diffuse * (diffuse + specular);

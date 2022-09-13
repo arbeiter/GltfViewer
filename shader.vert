@@ -21,9 +21,15 @@ void main() {
   camPos = light_pos;
   gl_Position = projection * view * model * vec4(aPos, 1.0);
 
-  v_normal = normalize(MVI * a_normal);
-  vec3 tangent = normalize(MVI * in_tangent);
-  vec3 bitangent = cross(v_normal, tangent);
-  tbn = transpose(mat3(tangent, bitangent, v_normal));
+  vec3 N = normalize(MVI * a_normal);
+  vec3 T = normalize(MVI * in_tangent);
+  T = normalize(T - dot(T, N) * N);
+  vec3 B = cross(N, T);
+  tbn = transpose(mat3(T, B, N));
   texCoord = tex_coord;
+  //  vs_out.TangentLightPos = TBN * lightPos;
+  //  vs_out.TangentViewPos  = TBN * viewPos;
+  //  vs_out.TangentFragPos  = TBN * vs_out.FragPos;
+  // vec3 viewDir = normalize(fs_in.TangentViewPos - fs_in.TangentFragPos);
+  // vec3 lightDir = normalize(fs_in.TangentLightPos - fs_in.TangentFragPos);
 }
