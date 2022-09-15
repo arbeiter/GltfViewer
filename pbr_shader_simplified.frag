@@ -107,35 +107,35 @@ void main() {
   vec3 f0 = mix(vec3(0.04), baseColor.rgb, mFactor);
 	vec3 result = vec3(0,0,0);
 
-for(int i = 0; i < NR_POINT_LIGHTS; i++) {
-  vec3 lightPos = pointLights[0].position;
-  vec3 L = normalize(lightPos - world_pos);
+  for(int i = 0; i < NR_POINT_LIGHTS; i++) {
+    vec3 lightPos = pointLights[0].position;
+    vec3 L = normalize(lightPos - world_pos);
 
-  float NdotL = max(dot(N, L), 0.0);
-  vec3 H = normalize(L + V);
+    float NdotL = max(dot(N, L), 0.0);
+    vec3 H = normalize(L + V);
 
-  vec3 f = fresnel_schlick(f0, H, V);
-  float perceptual_roughness = clamp(roughness, min_roughness, 1.0);
-  perceptual_roughness = perceptual_roughness * perceptual_roughness;
-  float d = DistributionGGX(N, H, perceptual_roughness);
-  float g = GeometrySmith(N, V, L, perceptual_roughness);
+    vec3 f = fresnel_schlick(f0, H, V);
+    float perceptual_roughness = clamp(roughness, min_roughness, 1.0);
+    perceptual_roughness = perceptual_roughness * perceptual_roughness;
+    float d = DistributionGGX(N, H, perceptual_roughness);
+    float g = GeometrySmith(N, V, L, perceptual_roughness);
 
-  vec3 specular = (d * g * f) / (4.0 * max(dot(N, V), 0.0) * max(dot(N, L), 0.0) + 0.0001);
-  vec3 diffuse = mix(baseColor.rgb - f, vec3(0.0), mFactor);
+    vec3 specular = (d * g * f) / (4.0 * max(dot(N, V), 0.0) * max(dot(N, L), 0.0) + 0.0001);
+    vec3 diffuse = mix(baseColor.rgb - f, vec3(0.0), mFactor);
 
-  float light_dist = length(lightPos - world_pos);
-  float att = 1.0 /
-    (0.5  +
-    1.0 * light_dist +
-    0.5 * light_dist * light_dist);
-  diffuse *= att;
-  specular *= att;
+    float light_dist = length(lightPos - world_pos);
+    float att = 1.0 /
+      (0.5  +
+      1.0 * light_dist +
+      0.5 * light_dist * light_dist);
+    diffuse *= att;
+    specular *= att;
 
-  vec3 temp = vec3(0,0,0);
-  temp += (diffuse + specular) * pointLights[0].diffuse * NdotL;
-  //temp += vec3(pointLights[0].ambient) * baseColor.rgb;
-  result += temp;
-}
+    vec3 temp = vec3(0,0,0);
+    temp += (diffuse + specular) * pointLights[0].diffuse * NdotL;
+    temp += vec3(pointLights[0].ambient) * baseColor.rgb;
+    result += temp;
+  }
 
   result = result / (result + vec3(1.0));
   result = pow(result, vec3(1.0/gamma));

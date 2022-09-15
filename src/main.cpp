@@ -100,7 +100,6 @@ void lightingBlob(Shader& lightingShader) {
   lightingShader.setFloat("pointLights[0].constant", 1.0f);
   lightingShader.setFloat("pointLights[0].linear", 0.09f);
   lightingShader.setFloat("pointLights[0].quadratic", 0.032f);
-  return;
 
   // point light 2
   lightingShader.setVec3("pointLights[1].position", pointLightPositions[1]);
