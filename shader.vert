@@ -10,20 +10,15 @@ uniform mat4 view;
 uniform mat4 projection;
 uniform mat3 MVI;
 
-out mat3 tbn;
 out vec3 v_normal;
 out vec3 world_pos;
 out vec3 camPos;
 out vec2 texCoord;
 
 void main() {
+  gl_Position = projection * view * model * vec4(aPos, 1.0);
   world_pos = (model * vec4(aPos, 1)).xyz;
   camPos = light_pos;
-  gl_Position = projection * view * model * vec4(aPos, 1.0);
-
-  v_normal = normalize(MVI * a_normal);
-  vec3 tangent = normalize(MVI * in_tangent);
-  vec3 bitangent = cross(v_normal, tangent);
-  tbn = transpose(mat3(tangent, bitangent, v_normal));
+  v_normal = mat3(model) * a_normal;
   texCoord = tex_coord;
 }
