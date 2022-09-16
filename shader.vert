@@ -14,6 +14,7 @@ out vec3 v_normal;
 out vec3 world_pos;
 out vec3 camPos;
 out vec2 texCoord;
+out vec4 viewFragPos;
 
 void main() {
   gl_Position = projection * view * model * vec4(aPos, 1.0);
@@ -21,4 +22,5 @@ void main() {
   camPos = light_pos;
   v_normal = mat3(model) * a_normal;
   texCoord = tex_coord;
+  viewFragPos = view * model * vec4(aPos, 1.0f);
 }

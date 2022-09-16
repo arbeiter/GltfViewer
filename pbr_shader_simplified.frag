@@ -4,6 +4,7 @@ in vec3 camPos;
 in vec3 world_pos;
 in vec3 v_normal;
 in vec3 v_color;
+in vec4 viewFragPos;
 in mat3 tbn;
 uniform vec3 base_color_provided;
 
@@ -78,8 +79,9 @@ vec3 getNormalFromMap()
 {
     vec3 tangentNormal = texture(normalTex, texCoord).xyz * 2.0 - 1.0;
 
-    vec3 Q1  = dFdx(world_pos);
-    vec3 Q2  = dFdy(world_pos);
+    vec3 viewPos = viewFragPos.xyz;
+    vec3 Q1  = dFdx(viewPos);
+    vec3 Q2  = dFdy(viewPos);
     vec2 st1 = dFdx(texCoord);
     vec2 st2 = dFdy(texCoord);
 
@@ -108,7 +110,7 @@ void main() {
 	vec3 result = vec3(0,0,0);
 
   for(int i = 0; i < NR_POINT_LIGHTS; i++) {
-    vec3 lightPos = pointLights[0].position;
+    vec3 lightPos = pointLights[i].position;
     vec3 L = normalize(lightPos - world_pos);
 
     float NdotL = max(dot(N, L), 0.0);
@@ -133,7 +135,7 @@ void main() {
 
     vec3 temp = vec3(0,0,0);
     temp += (diffuse + specular) * pointLights[0].diffuse * NdotL;
-    temp += vec3(pointLights[0].ambient) * baseColor.rgb;
+    //temp += vec3(pointLights[0].ambient) * baseColor.rgb;
     result += temp;
   }
 
