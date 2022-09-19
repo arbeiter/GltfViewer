@@ -1,4 +1,5 @@
 #version 330 core
+varying vec4 view_posn;
 in vec2 texCoord;
 in vec3 camPos;
 in vec3 world_pos;
@@ -6,8 +7,12 @@ in vec3 v_normal;
 in vec3 v_color;
 in vec4 viewFragPos;
 in mat3 tbn;
-uniform vec3 base_color_provided;
+in vec4 eyeVec;
+in mat4 vm;
 
+uniform float u_fogDensity;
+
+uniform vec3 base_color_provided;
 uniform float metallicFactor;
 uniform float roughFactor;
 
@@ -20,6 +25,7 @@ uniform bool isbaseColorTexturePresent;
 uniform bool isMetallicTexturePresent;
 uniform bool isNormalTexturePresent;
 
+#define LOG2 1.442695
 #define NR_POINT_LIGHTS 4
 struct PointLight {
     vec3 position;
@@ -75,9 +81,9 @@ vec3 fresnel_schlick(vec3 f0, vec3 H, vec3 V) {
     return f0 + (1.0 - f0) * pow(1.0 - max(dot(H, V), 0.0), 5.0);
 }
 
-vec3 getNormalFromMap()
+vec3 getNormalFromMap(vec3 normalSampled)
 {
-    vec3 tangentNormal = texture(normalTex, texCoord).xyz * 2.0 - 1.0;
+    vec3 tangentNormal = normalSampled * 2.0 - 1.0;
 
     vec3 viewPos = viewFragPos.xyz;
     vec3 Q1  = dFdx(viewPos);
@@ -93,6 +99,18 @@ vec3 getNormalFromMap()
     return normalize(TBN * tangentNormal);
 }
 
+vec3 calculateRimLighting(vec3 normalSampled) {
+  // usage
+  /*
+    vec3 rimlight = calculateRimLighting(normalSampled) * vec3(1, 0, 0) * 0.09;
+    result += rimlight;
+  */
+  vec4 v_pos = eyeVec;
+  vec3 n = normalize(mat3(vm) * v_normal);
+  float vdn = max(1 - dot(eyeVec.rgb, n), 0.0);
+  return vec3(smoothstep(0.8, 1.0, vdn));
+}
+
 void main() {
   float gamma = 2.2;
   float min_roughness = 0.04;
@@ -103,7 +121,8 @@ void main() {
   vec3 baseColor = pow(colrgb, vec3(gamma));
   float roughness = texture2D(metallicTex, texCoord).g;
   float mFactor = texture2D(metallicTex, texCoord).b;
-  vec3 N = getNormalFromMap();
+  vec3 normalSampled = texture(normalTex, texCoord).xyz;
+  vec3 N = getNormalFromMap(normalSampled);
   vec3 V = normalize(camPos - world_pos);
 
   vec3 f0 = mix(vec3(0.04), baseColor.rgb, mFactor);
@@ -141,5 +160,14 @@ void main() {
 
   result = result / (result + vec3(1.0));
   result = pow(result, vec3(1.0/gamma));
-  FragColor = vec4(result, col.w);
+
+  // Fog parameters, could make them uniforms and pass them into the fragment shader
+  float fog_maxdist = 8.0;
+  float fog_mindist = 0.1;
+  vec4 fog_color = vec4(0.4, 0.4, 0.4, 1.0);
+  float fogDistance = length(viewFragPos.xyz);
+  float fog_factor = (fog_maxdist - fogDistance) / (fog_maxdist - fog_mindist);
+  fog_factor = clamp(fog_factor, 0., 1.);
+  vec4 tempResult = vec4(result, col.w);
+  FragColor = mix(fog_color, tempResult, fog_factor);
 }
