@@ -138,7 +138,7 @@ void displayLoop(Window &window, std::string filename) {
     glm::mat4 view = quat_camera.getViewMatrix();
     Scene scene = Scene(ourShader, filename);
     glEnable(GL_DEPTH_TEST);
-    glDepthFunc(GL_EQUAL);
+    glDepthFunc(GL_LESS);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     glEnable(GL_BLEND);
     scene.loadModel(view, 1);
