@@ -7,4 +7,3 @@ std::string getexepath()
   ssize_t count = readlink( "/proc/self/exe", result, PATH_MAX );
   return std::string( result, (count > 0) ? count : 0 );
 }
-

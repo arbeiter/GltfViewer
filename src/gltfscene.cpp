@@ -37,7 +37,7 @@ bool Scene::loadGltf(tinygltf::Model &model, const char *filename) {
   bool ret = false;
   ret = loader.LoadASCIIFromFile(&model, &err, &warn, filename);
   if (!err.empty()) std::cout << "ERR : " << err << std::endl;
-  dbgModel(model);
+  //dbgModel(model);
   return ret;
 }
 
@@ -355,6 +355,7 @@ void Scene::drawMesh(tinygltf::Mesh &mesh, tinygltf::Model &model, glm::mat4 mat
         }
       }
   }
+
   glDisableVertexAttribArray(0);
   glDisableVertexAttribArray(1);
   glDisableVertexAttribArray(2);

@@ -9,6 +9,7 @@
 #include "camera.h"
 #include "gltfscene.h"
 #include "imgui.h"
+#include "framebuffer.hpp"
 // TODO: Backends should be imgui/backends. Fix this
 #include "backends/imgui_impl_glfw.h"
 #include "backends/imgui_impl_opengl3.h"
@@ -18,6 +19,9 @@ int curr_height = 600;
 float lastX = 10;
 float lastY = 10;
 bool isFirstMouse = false;
+
+double previousTime = glfwGetTime();
+int frameCount = 0;
 
 glm::vec3 eye(0, 0, 5);
 glm::vec3 center(0);
@@ -30,6 +34,9 @@ Camera quat_camera(center);
 
 void mouse_callback(GLFWwindow* window, double xpos, double ypos);
 void processInput(GLFWwindow *window);
+Shader setupScreenShader();
+void fpsCalc();
+
 int ShowStyleSelector(const char* label, int &selectedLabel);
 
 void initImgUi(Window &window);
@@ -76,6 +83,18 @@ static void GLAPIENTRY glDebugCallback(GLenum source, GLenum type, GLuint, GLenu
 
     if (severity == GL_DEBUG_SEVERITY_HIGH)
         throw(std::runtime_error("GL Error"));
+}
+
+void fpsCalc() {
+  // Simple FPS timer
+  double currentTime = glfwGetTime();
+  frameCount++;
+  if ( currentTime - previousTime >= 1.0 )
+  {
+      std::cout << "FPS " << frameCount << std::endl;
+      frameCount = 0;
+      previousTime = currentTime;
+  }
 }
 
 static void initGLDebug() {
@@ -129,20 +148,46 @@ void lightingBlob(Shader& lightingShader) {
   lightingShader.setFloat("pointLights[3].quadratic", 0.032f);
 }
 
+Shader setupScreenShader() {
+  Shader screenShader("framebuffer_screen.vs", "framebuffer_screen.fs");
+  screenShader.use();
+  screenShader.setInt("screenTexture", 0);
+  return screenShader;
+}
+
+void renderModel(Scene &scene, Shader &pbrShader, glm::mat4 &view) {
+    view = quat_camera.getViewMatrix();
+    scene.setWidthAndHeight(curr_width, curr_height);
+
+    int selectedModel = 1;
+    int currentModel = drawGui(selectedModel);
+    if(currentModel != selectedModel) {
+      selectedModel = currentModel;
+      std::cout << " Loading selected Model " << selectedModel << " " << currentModel << std::endl;
+      scene.loadModel(view, selectedModel);
+    }
+    scene.setShader(pbrShader, quat_camera.Position);
+    lightingBlob(pbrShader);
+    scene.drawScene(view);
+}
+
 void displayLoop(Window &window, std::string filename) {
+
     Shader ourShader("shader.vert", "pbr_shader_simplified.frag"); // you can name your shader files however you like
     Shader geometryShader("normal.vert", "normal.frag", "normal.gs");
 
     std::string shader_vert_path = "shader.vert";
     std::string shader_frag_path = "pbr_shader_simplified.frag";
     glm::mat4 view = quat_camera.getViewMatrix();
+
     Scene scene = Scene(ourShader, filename);
     glEnable(GL_DEPTH_TEST);
     glDepthFunc(GL_LESS);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     glEnable(GL_BLEND);
+
     scene.loadModel(view, 1);
-    int selectedModel = 1;
+
     bool normalsVisible = false;
 
     // Variables to be changed in the ImGUI window
@@ -150,31 +195,20 @@ void displayLoop(Window &window, std::string filename) {
     float size = 1.0f;
     float color[4] = { 0.8f, 0.3f, 0.02f, 1.0f };
 
+    Shader screenShader = setupScreenShader();
+    //FrameBuffer fb = FrameBuffer(screenShader, curr_width, curr_height);
+    //fb.setup();
+
     while (!glfwWindowShouldClose(window.window))
     {
-        processInput(window.window);
         glClearColor(0.1f, 0.0f, 0.0f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         glEnable(GL_DEPTH_TEST);
+        processInput(window.window);
+        //fb.renderToFramebuffer();
 
-        // Draw scene
-        view = quat_camera.getViewMatrix();
-        scene.setWidthAndHeight(curr_width, curr_height);
-        int currentModel = drawGui(selectedModel);
-        if(currentModel != selectedModel) {
-          selectedModel = currentModel;
-          std::cout << " Loading selected Model " << selectedModel << " " << currentModel << std::endl;
-          scene.loadModel(view, selectedModel);
-        }
-
-        scene.setShader(ourShader, quat_camera.Position);
-        lightingBlob(ourShader);
-        scene.drawScene(view);
-
-        if(normalsVisible) {
-          //scene.setShader(geometryShader);
-          //scene.drawScene(view);
-        }
+        renderModel(scene, ourShader, view);
+        //fb.clearAndRenderQuad();
 
         glfwSwapBuffers(window.window);
         glfwPollEvents();

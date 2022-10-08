@@ -9,6 +9,7 @@ add_executable(${PROJECT_NAME}
   window.cpp
   gltfscene.cpp
   gltfscene.h
+  framebuffer.hpp
   utils.hpp)
 
 find_package(glfw3 3.3 REQUIRED)

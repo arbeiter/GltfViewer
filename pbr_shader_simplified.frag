@@ -99,6 +99,17 @@ vec3 getNormalFromMap(vec3 normalSampled)
     return normalize(TBN * tangentNormal);
 }
 
+vec4 fogColor(vec3 result, vec4 col) {
+  float fog_maxdist = 8.0;
+  float fog_mindist = 0.1;
+  vec4 fog_color = vec4(0.4, 0.4, 0.4, 1.0);
+  float fogDistance = length(viewFragPos.xyz);
+  float fog_factor = (fog_maxdist - fogDistance) / (fog_maxdist - fog_mindist);
+  fog_factor = clamp(fog_factor, 0., 1.);
+  vec4 tempResult = vec4(result, col.w);
+  return mix(fog_color, tempResult, fog_factor);
+}
+
 vec3 calculateRimLighting(vec3 normalSampled) {
   // usage
   /*
@@ -160,14 +171,5 @@ void main() {
 
   result = result / (result + vec3(1.0));
   result = pow(result, vec3(1.0/gamma));
-
-  // Fog parameters, could make them uniforms and pass them into the fragment shader
-  float fog_maxdist = 8.0;
-  float fog_mindist = 0.1;
-  vec4 fog_color = vec4(0.4, 0.4, 0.4, 1.0);
-  float fogDistance = length(viewFragPos.xyz);
-  float fog_factor = (fog_maxdist - fogDistance) / (fog_maxdist - fog_mindist);
-  fog_factor = clamp(fog_factor, 0., 1.);
-  vec4 tempResult = vec4(result, col.w);
-  FragColor = mix(fog_color, tempResult, fog_factor);
+  FragColor = vec4(result, 1.0); //fogColor(result, col);
 }
