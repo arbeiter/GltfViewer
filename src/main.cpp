@@ -149,7 +149,7 @@ void lightingBlob(Shader& lightingShader) {
 }
 
 Shader setupScreenShader() {
-  Shader screenShader("framebuffer_screen.vs", "framebuffer_screen.fs");
+  Shader screenShader("shaders/framebuffer_screen.vs", "shaders/framebuffer_screen.fs");
   screenShader.use();
   screenShader.setInt("screenTexture", 0);
   return screenShader;
@@ -172,14 +172,10 @@ void renderModel(Scene &scene, Shader &pbrShader, glm::mat4 &view) {
 }
 
 void displayLoop(Window &window, std::string filename) {
+    Shader ourShader("shaders/shader.vert", "shaders/pbr_shader_simplified.frag"); // you can name your shader files however you like
+    Shader geometryShader("shaders/normal.vert", "shaders/normal.frag", "shaders/normal.gs");
 
-    Shader ourShader("shader.vert", "pbr_shader_simplified.frag"); // you can name your shader files however you like
-    Shader geometryShader("normal.vert", "normal.frag", "normal.gs");
-
-    std::string shader_vert_path = "shader.vert";
-    std::string shader_frag_path = "pbr_shader_simplified.frag";
     glm::mat4 view = quat_camera.getViewMatrix();
-
     Scene scene = Scene(ourShader, filename);
     glEnable(GL_DEPTH_TEST);
     glDepthFunc(GL_LESS);
@@ -187,8 +183,6 @@ void displayLoop(Window &window, std::string filename) {
     glEnable(GL_BLEND);
 
     scene.loadModel(view, 1);
-
-    bool normalsVisible = false;
 
     // Variables to be changed in the ImGUI window
     bool drawTriangle = true;
