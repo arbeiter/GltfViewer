@@ -155,6 +155,121 @@ Shader setupScreenShader() {
   return screenShader;
 }
 
+Shader setupSimpleShader() {
+  Shader simpleShader("shaders/simple_shader.vs", "shaders/simple_shader.fs");
+  simpleShader.use();
+  simpleShader.setInt("texture1", 0);
+  return simpleShader;
+}
+
+// TODO: Move to plane class
+unsigned int planeVAO, planeVBO;
+unsigned int floorTexture;
+
+// utility function for loading a 2D texture from file
+// ---------------------------------------------------
+unsigned int loadTexture(char const * path)
+{
+    unsigned int textureID;
+    glGenTextures(1, &textureID);
+
+    int width, height, nrComponents;
+    unsigned char *data = stbi_load(path, &width, &height, &nrComponents, 0);
+    if (data)
+    {
+        GLenum format;
+        if (nrComponents == 1)
+            format = GL_RED;
+        else if (nrComponents == 3)
+            format = GL_RGB;
+        else if (nrComponents == 4)
+            format = GL_RGBA;
+
+        glBindTexture(GL_TEXTURE_2D, textureID);
+        glTexImage2D(GL_TEXTURE_2D, 0, format, width, height, 0, format, GL_UNSIGNED_BYTE, data);
+        glGenerateMipmap(GL_TEXTURE_2D);
+
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+        stbi_image_free(data);
+    }
+    else
+    {
+        std::cout << "Texture failed to load at path: " << path << std::endl;
+        stbi_image_free(data);
+    }
+
+    return textureID;
+}
+
+void loadTestScene() {
+    float planeVertices[] = {
+         // positions         // texture Coords
+         5.0f, -0.5f,  5.0f,  2.0f, 0.0f,
+        -5.0f, -0.5f,  5.0f,  0.0f, 0.0f,
+        -5.0f, -0.5f, -5.0f,  0.0f, 2.0f,
+         5.0f, -0.5f,  5.0f,  2.0f, 0.0f,
+        -5.0f, -0.5f, -5.0f,  0.0f, 2.0f,
+         5.0f, -0.5f, -5.0f,  2.0f, 2.0f
+    };
+    // plane VAO
+    planeVAO = 0;
+    planeVBO = 0;
+
+    glGenVertexArrays(1, &planeVAO);
+    glGenBuffers(1, &planeVBO);
+    glBindVertexArray(planeVAO);
+    glBindBuffer(GL_ARRAY_BUFFER, planeVBO);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(planeVertices), &planeVertices, GL_STATIC_DRAW);
+
+    glEnableVertexAttribArray(0);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0);
+    glEnableVertexAttribArray(1);
+    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
+    floorTexture = loadTexture("resources/textures/metal.png");
+}
+
+void drawTestScene(Shader &simpleShader, glm::mat4 &view) {
+    float planeVertices[] = {
+         // positions         // texture Coords
+         5.0f, -0.5f,  5.0f,  2.0f, 0.0f,
+        -5.0f, -0.5f,  5.0f,  0.0f, 0.0f,
+        -5.0f, -0.5f, -5.0f,  0.0f, 2.0f,
+         5.0f, -0.5f,  5.0f,  2.0f, 0.0f,
+        -5.0f, -0.5f, -5.0f,  0.0f, 2.0f,
+         5.0f, -0.5f, -5.0f,  2.0f, 2.0f
+    };
+    // plane VAO
+    unsigned int planeVAO;
+    unsigned int planeVBO;
+
+    glGenVertexArrays(1, &planeVAO);
+    glGenBuffers(1, &planeVBO);
+    glBindVertexArray(planeVAO);
+    glBindBuffer(GL_ARRAY_BUFFER, planeVBO);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(planeVertices), &planeVertices, GL_STATIC_DRAW);
+
+    glEnableVertexAttribArray(0);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0);
+    glEnableVertexAttribArray(1);
+    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
+    floorTexture = loadTexture("resources/textures/metal.png");
+
+    glm::mat4 projection = glm::perspective(glm::radians(30.0f), (float)(curr_width / curr_height), 0.1f, 1000.0f);
+
+    glBindVertexArray(planeVAO);
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, floorTexture);
+    simpleShader.setMat4("view", view);
+    simpleShader.setMat4("model", glm::mat4(1.0f));
+    simpleShader.setMat4("projection", projection);
+    glDrawArrays(GL_TRIANGLES, 0, 6);
+    glBindVertexArray(0);
+}
+
 void renderModel(Scene &scene, Shader &pbrShader, glm::mat4 &view) {
     view = quat_camera.getViewMatrix();
     scene.setWidthAndHeight(curr_width, curr_height);
@@ -187,22 +302,31 @@ void displayLoop(Window &window, std::string filename) {
     // Variables to be changed in the ImGUI window
     bool drawTriangle = true;
     float size = 1.0f;
-    float color[4] = { 0.8f, 0.3f, 0.02f, 1.0f };
+
+    loadTestScene();
 
     Shader screenShader = setupScreenShader();
-    //FrameBuffer fb = FrameBuffer(screenShader, curr_width, curr_height);
-    //fb.setup();
+    Shader simpleShader = setupSimpleShader();
+    FrameBuffer fb = FrameBuffer(screenShader, curr_width, curr_height);
+    fb.setup();
 
     while (!glfwWindowShouldClose(window.window))
     {
+        std::cout << "315" << std::endl;
         glClearColor(0.1f, 0.0f, 0.0f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         glEnable(GL_DEPTH_TEST);
         processInput(window.window);
-        //fb.renderToFramebuffer();
+        fb.renderToFramebuffer();
+        std::cout << "321" << std::endl;
 
-        renderModel(scene, ourShader, view);
-        //fb.clearAndRenderQuad();
+        simpleShader.use();
+        drawTestScene(simpleShader, view);
+        std::cout << "324" << std::endl;
+        std::cout << "Before Clear and Render Quad" << std::endl;
+        //renderModel(scene, ourShader, view);
+        fb.clearAndRenderQuad();
+        std::cout << "After Clear and Render Quad" << std::endl;
 
         glfwSwapBuffers(window.window);
         glfwPollEvents();

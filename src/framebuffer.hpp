@@ -50,6 +50,8 @@ class FrameBuffer {
 
     void clearAndRenderQuad() {
       // second pass
+      screenShader.use();
+      screenShader.setInt("screenTexture", 0);
       glBindFramebuffer(GL_FRAMEBUFFER, 0); // back to default
       glDisable(GL_DEPTH_TEST); // disable depth test so screen-space quad isn't discarded due to depth test.
       glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
