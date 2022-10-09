@@ -233,31 +233,6 @@ void loadTestScene() {
 }
 
 void drawTestScene(Shader &simpleShader, glm::mat4 &view) {
-    float planeVertices[] = {
-         // positions         // texture Coords
-         5.0f, -0.5f,  5.0f,  2.0f, 0.0f,
-        -5.0f, -0.5f,  5.0f,  0.0f, 0.0f,
-        -5.0f, -0.5f, -5.0f,  0.0f, 2.0f,
-         5.0f, -0.5f,  5.0f,  2.0f, 0.0f,
-        -5.0f, -0.5f, -5.0f,  0.0f, 2.0f,
-         5.0f, -0.5f, -5.0f,  2.0f, 2.0f
-    };
-    // plane VAO
-    unsigned int planeVAO;
-    unsigned int planeVBO;
-
-    glGenVertexArrays(1, &planeVAO);
-    glGenBuffers(1, &planeVBO);
-    glBindVertexArray(planeVAO);
-    glBindBuffer(GL_ARRAY_BUFFER, planeVBO);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(planeVertices), &planeVertices, GL_STATIC_DRAW);
-
-    glEnableVertexAttribArray(0);
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0);
-    glEnableVertexAttribArray(1);
-    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
-    floorTexture = loadTexture("resources/textures/metal.png");
-
     glm::mat4 projection = glm::perspective(glm::radians(30.0f), (float)(curr_width / curr_height), 0.1f, 1000.0f);
 
     glBindVertexArray(planeVAO);
@@ -281,6 +256,7 @@ void renderModel(Scene &scene, Shader &pbrShader, glm::mat4 &view) {
       std::cout << " Loading selected Model " << selectedModel << " " << currentModel << std::endl;
       scene.loadModel(view, selectedModel);
     }
+    pbrShader.use();
     scene.setShader(pbrShader, quat_camera.Position);
     lightingBlob(pbrShader);
     scene.drawScene(view);
@@ -298,35 +274,23 @@ void displayLoop(Window &window, std::string filename) {
     glEnable(GL_BLEND);
 
     scene.loadModel(view, 1);
-
-    // Variables to be changed in the ImGUI window
     bool drawTriangle = true;
     float size = 1.0f;
 
-    loadTestScene();
-
     Shader screenShader = setupScreenShader();
     Shader simpleShader = setupSimpleShader();
+
     FrameBuffer fb = FrameBuffer(screenShader, curr_width, curr_height);
-    fb.setup();
+    //fb.setup();
 
     while (!glfwWindowShouldClose(window.window))
     {
-        std::cout << "315" << std::endl;
-        glClearColor(0.1f, 0.0f, 0.0f, 1.0f);
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-        glEnable(GL_DEPTH_TEST);
         processInput(window.window);
-        fb.renderToFramebuffer();
-        std::cout << "321" << std::endl;
+        //fb.renderToFramebuffer();
 
-        simpleShader.use();
-        drawTestScene(simpleShader, view);
-        std::cout << "324" << std::endl;
-        std::cout << "Before Clear and Render Quad" << std::endl;
-        //renderModel(scene, ourShader, view);
-        fb.clearAndRenderQuad();
-        std::cout << "After Clear and Render Quad" << std::endl;
+        ourShader.use();
+        renderModel(scene, ourShader, view);
+        //fb.clearAndRenderQuad();
 
         glfwSwapBuffers(window.window);
         glfwPollEvents();

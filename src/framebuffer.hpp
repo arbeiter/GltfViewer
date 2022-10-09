@@ -48,28 +48,13 @@ class FrameBuffer {
       glBindFramebuffer(GL_FRAMEBUFFER, 0);
     }
 
-    void clearAndRenderQuad() {
-      // second pass
-      screenShader.use();
-      screenShader.setInt("screenTexture", 0);
-      glBindFramebuffer(GL_FRAMEBUFFER, 0); // back to default
-      glDisable(GL_DEPTH_TEST); // disable depth test so screen-space quad isn't discarded due to depth test.
-      glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
-      glClear(GL_COLOR_BUFFER_BIT);
-
-      screenShader.use();
-      glBindVertexArray(quadVAO);
-      glBindTexture(GL_TEXTURE_2D, textureColorbuffer);
-      glDrawArrays(GL_TRIANGLES, 0, 6);
-    }
-
     void generateColorTexture() {
       glGenTextures(1, &textureColorbuffer);
       glBindTexture(GL_TEXTURE_2D, textureColorbuffer);
       glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, screen_width, screen_height, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
       glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR );
       glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-      glBindTexture(GL_TEXTURE_2D, 0);
+      glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, textureColorbuffer, 0);
     }
 
     void generateRenderBuffer() {
@@ -87,6 +72,17 @@ class FrameBuffer {
       generateColorTexture();
       generateRenderBuffer();
       checkFrameBuffer();
+    }
+
+    void clearAndRenderQuad() {
+      screenShader.use();
+      screenShader.setInt("screenTexture", 0);
+      glBindFramebuffer(GL_FRAMEBUFFER, 0); // back to default
+      glDisable(GL_DEPTH_TEST); // disable depth test so screen-space quad isn't discarded due to depth test.
+      glClear(GL_COLOR_BUFFER_BIT);
+      glBindVertexArray(quadVAO);
+      glBindTexture(GL_TEXTURE_2D, textureColorbuffer);
+      glDrawArrays(GL_TRIANGLES, 0, 6);
     }
 
     void renderToFramebuffer() {
