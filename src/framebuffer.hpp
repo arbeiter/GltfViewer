@@ -15,8 +15,8 @@ class FrameBuffer {
 
     FrameBuffer(Shader &shader, int s_w, int s_h): screenShader(shader) {
       screenShader = shader;
-      screen_width = s_w;
-      screen_height = s_h;
+      screen_width = 3400;
+      screen_height = 1440;
     }
 
     void setupFullScreenQuad() {
@@ -75,12 +75,13 @@ class FrameBuffer {
     }
 
     void clearAndRenderQuad() {
-      glActiveTexture(GL_TEXTURE0);
-      screenShader.use();
-      screenShader.setInt("screenTexture", 0);
       glBindFramebuffer(GL_FRAMEBUFFER, 0); // back to default
       glDisable(GL_DEPTH_TEST); // disable depth test so screen-space quad isn't discarded due to depth test.
       glClear(GL_COLOR_BUFFER_BIT);
+      setupFullScreenQuad();
+      screenShader.use();
+      screenShader.setInt("screenTexture", 0);
+      glActiveTexture(GL_TEXTURE0);
       glBindVertexArray(quadVAO);
       glBindTexture(GL_TEXTURE_2D, textureColorbuffer);
       glDrawArrays(GL_TRIANGLES, 0, 6);

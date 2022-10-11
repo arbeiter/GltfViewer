@@ -281,7 +281,7 @@ void displayLoop(Window &window, std::string filename) {
     Shader simpleShader = setupSimpleShader();
 
     FrameBuffer fb = FrameBuffer(screenShader, curr_width, curr_height);
-    //fb.setup();
+    fb.setup();
 
     while (!glfwWindowShouldClose(window.window))
     {
@@ -289,11 +289,11 @@ void displayLoop(Window &window, std::string filename) {
         glClearColor(0.1f, 0.0f, 0.0f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         glEnable(GL_DEPTH_TEST);
-        //fb.renderToFramebuffer();
+        fb.renderToFramebuffer();
 
         ourShader.use();
         renderModel(scene, ourShader, view);
-        //fb.clearAndRenderQuad();
+        fb.clearAndRenderQuad();
 
         glfwSwapBuffers(window.window);
         glfwPollEvents();

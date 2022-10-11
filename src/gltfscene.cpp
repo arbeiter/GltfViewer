@@ -381,7 +381,7 @@ void Scene::drawMesh(tinygltf::Mesh &mesh, tinygltf::Model &model, glm::mat4 mat
       }
   }
   */
-  glActiveTexture(GL_TEXTURE0);
+  //glActiveTexture(GL_TEXTURE0);
 }
 
 void Scene::setMaterials(tinygltf::Material &material, Shader& ourShader) {
