@@ -75,6 +75,7 @@ class FrameBuffer {
     }
 
     void clearAndRenderQuad() {
+      glActiveTexture(GL_TEXTURE0);
       screenShader.use();
       screenShader.setInt("screenTexture", 0);
       glBindFramebuffer(GL_FRAMEBUFFER, 0); // back to default
