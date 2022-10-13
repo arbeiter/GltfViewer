@@ -10,6 +10,7 @@ add_executable(${PROJECT_NAME}
   gltfscene.cpp
   gltfscene.h
   framebuffer.hpp
+  custom_geometry.hpp
   utils.hpp)
 
 find_package(glfw3 3.3 REQUIRED)

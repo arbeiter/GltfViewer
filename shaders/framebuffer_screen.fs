@@ -19,5 +19,5 @@ vec4 grayScale(vec3 color) {
 void main()
 {
     vec3 col = texture(screenTexture, TexCoords).rgb;
-    FragColor = col;
+    FragColor = vec4(col, 1.0);
 }

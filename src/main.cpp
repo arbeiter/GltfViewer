@@ -10,6 +10,7 @@
 #include "gltfscene.h"
 #include "imgui.h"
 #include "framebuffer.hpp"
+#include "custom_geometry.hpp"
 // TODO: Backends should be imgui/backends. Fix this
 #include "backends/imgui_impl_glfw.h"
 #include "backends/imgui_impl_opengl3.h"
@@ -155,96 +156,6 @@ Shader setupScreenShader() {
   return screenShader;
 }
 
-Shader setupSimpleShader() {
-  Shader simpleShader("shaders/simple_shader.vs", "shaders/simple_shader.fs");
-  simpleShader.use();
-  simpleShader.setInt("texture1", 0);
-  return simpleShader;
-}
-
-// TODO: Move to plane class
-unsigned int planeVAO, planeVBO;
-unsigned int floorTexture;
-
-// utility function for loading a 2D texture from file
-// ---------------------------------------------------
-unsigned int loadTexture(char const * path)
-{
-    unsigned int textureID;
-    glGenTextures(1, &textureID);
-
-    int width, height, nrComponents;
-    unsigned char *data = stbi_load(path, &width, &height, &nrComponents, 0);
-    if (data)
-    {
-        GLenum format;
-        if (nrComponents == 1)
-            format = GL_RED;
-        else if (nrComponents == 3)
-            format = GL_RGB;
-        else if (nrComponents == 4)
-            format = GL_RGBA;
-
-        glBindTexture(GL_TEXTURE_2D, textureID);
-        glTexImage2D(GL_TEXTURE_2D, 0, format, width, height, 0, format, GL_UNSIGNED_BYTE, data);
-        glGenerateMipmap(GL_TEXTURE_2D);
-
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-
-        stbi_image_free(data);
-    }
-    else
-    {
-        std::cout << "Texture failed to load at path: " << path << std::endl;
-        stbi_image_free(data);
-    }
-
-    return textureID;
-}
-
-void loadTestScene() {
-    float planeVertices[] = {
-         // positions         // texture Coords
-         5.0f, -0.5f,  5.0f,  2.0f, 0.0f,
-        -5.0f, -0.5f,  5.0f,  0.0f, 0.0f,
-        -5.0f, -0.5f, -5.0f,  0.0f, 2.0f,
-         5.0f, -0.5f,  5.0f,  2.0f, 0.0f,
-        -5.0f, -0.5f, -5.0f,  0.0f, 2.0f,
-         5.0f, -0.5f, -5.0f,  2.0f, 2.0f
-    };
-    // plane VAO
-    planeVAO = 0;
-    planeVBO = 0;
-
-    glGenVertexArrays(1, &planeVAO);
-    glGenBuffers(1, &planeVBO);
-    glBindVertexArray(planeVAO);
-    glBindBuffer(GL_ARRAY_BUFFER, planeVBO);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(planeVertices), &planeVertices, GL_STATIC_DRAW);
-
-    glEnableVertexAttribArray(0);
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0);
-    glEnableVertexAttribArray(1);
-    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
-    floorTexture = loadTexture("resources/textures/metal.png");
-}
-
-void drawTestScene(Shader &simpleShader, glm::mat4 &view) {
-    glm::mat4 projection = glm::perspective(glm::radians(30.0f), (float)(curr_width / curr_height), 0.1f, 1000.0f);
-
-    glBindVertexArray(planeVAO);
-    glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, floorTexture);
-    simpleShader.setMat4("view", view);
-    simpleShader.setMat4("model", glm::mat4(1.0f));
-    simpleShader.setMat4("projection", projection);
-    glDrawArrays(GL_TRIANGLES, 0, 6);
-    glBindVertexArray(0);
-}
-
 void renderModel(Scene &scene, Shader &pbrShader, glm::mat4 &view) {
     view = quat_camera.getViewMatrix();
     scene.setWidthAndHeight(curr_width, curr_height);
@@ -263,25 +174,31 @@ void renderModel(Scene &scene, Shader &pbrShader, glm::mat4 &view) {
 }
 
 void displayLoop(Window &window, std::string filename) {
+    bool isTest = true;
+    bool isFbEnabled = false;
     Shader ourShader("shaders/shader.vert", "shaders/pbr_shader_simplified.frag"); // you can name your shader files however you like
     Shader geometryShader("shaders/normal.vert", "shaders/normal.frag", "shaders/normal.gs");
 
     glm::mat4 view = quat_camera.getViewMatrix();
     Scene scene = Scene(ourShader, filename);
+    CustomGeometry customGeometry = CustomGeometry();
     glEnable(GL_DEPTH_TEST);
     glDepthFunc(GL_LESS);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     glEnable(GL_BLEND);
 
-    scene.loadModel(view, 1);
-    bool drawTriangle = true;
     float size = 1.0f;
 
     Shader screenShader = setupScreenShader();
-    Shader simpleShader = setupSimpleShader();
+    if(isTest) {
+      //customGeometry.loadTestPlane();
+    } else {
+      scene.loadModel(view, 1);
+    }
 
     FrameBuffer fb = FrameBuffer(screenShader, curr_width, curr_height);
-    fb.setup();
+    if(isFbEnabled)
+      fb.setup();
 
     while (!glfwWindowShouldClose(window.window))
     {
@@ -289,12 +206,20 @@ void displayLoop(Window &window, std::string filename) {
         glClearColor(0.1f, 0.0f, 0.0f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         glEnable(GL_DEPTH_TEST);
-        fb.renderToFramebuffer();
+
+        if(isFbEnabled)
+          fb.renderToFramebuffer();
 
         ourShader.use();
-        renderModel(scene, ourShader, view);
-        fb.clearAndRenderQuad();
+        if(isTest) {
+          view = quat_camera.getViewMatrix();
+          customGeometry.renderCube(view);
+        } else {
+          renderModel(scene, ourShader, view);
+        }
 
+        if(isFbEnabled)
+          fb.clearAndRenderQuad();
         glfwSwapBuffers(window.window);
         glfwPollEvents();
     }
