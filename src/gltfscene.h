@@ -1,3 +1,5 @@
+#ifndef GLTF_SCENE_HPP
+#define GLTF_SCENE_HPP
 #include <shader.h>
 #include <glad/gl.h>
 #include <stb_image.h>
@@ -52,3 +54,4 @@ class Scene
       void setView(glm::mat4 &viewParam);
       void setWidthAndHeight(int w, int h);
 };
+#endif

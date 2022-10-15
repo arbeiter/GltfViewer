@@ -9,8 +9,8 @@
 #include "camera.h"
 #include "gltfscene.h"
 #include "imgui.h"
-#include "framebuffer.hpp"
 #include "custom_geometry.hpp"
+#include "framebuffer.hpp"
 // TODO: Backends should be imgui/backends. Fix this
 #include "backends/imgui_impl_glfw.h"
 #include "backends/imgui_impl_opengl3.h"
@@ -212,8 +212,8 @@ void displayLoop(Window &window, std::string filename) {
 
         ourShader.use();
         if(isTest) {
-          view = quat_camera.getViewMatrix();
-          customGeometry.renderCube(view);
+          //view = quat_camera.getViewMatrix();
+          //customGeometry.renderCube(view);
         } else {
           renderModel(scene, ourShader, view);
         }
