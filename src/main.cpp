@@ -212,8 +212,8 @@ void displayLoop(Window &window, std::string filename) {
 
         ourShader.use();
         if(isTest) {
-          //view = quat_camera.getViewMatrix();
-          //customGeometry.renderCube(view);
+          view = quat_camera.getViewMatrix();
+          customGeometry.renderCube(view);
         } else {
           renderModel(scene, ourShader, view);
         }

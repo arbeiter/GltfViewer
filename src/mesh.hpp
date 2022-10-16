@@ -7,9 +7,9 @@
 #include <glm.hpp>
 
 struct Vertex {
-  glm::vec3 Position;
-  glm::vec3 Normal;
-  glm::vec2 TexCoords;
+  glm::vec3 Position{0.0f};
+  glm::vec3 Normal{0.0f};
+  glm::vec2 TexCoords{0.0f};
 };
 
 class Mesh {
@@ -19,6 +19,7 @@ class Mesh {
     Mesh(std::vector<Vertex>& vertices, std::vector<GLuint>& indices, std::string path);
     ~Mesh();
     void draw();
+    Mesh createCubeMesh(const glm::vec3& dimensions);
 
   private:
     const char* texture_file;
@@ -26,4 +27,5 @@ class Mesh {
     void setupMesh();
     unsigned int texture_ = 0;
 };
+
 #endif
