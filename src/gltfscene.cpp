@@ -216,7 +216,6 @@ void Scene::loadTextures(tinygltf::Model &model) {
 }
 
 void Scene::drawNode(tinygltf::Model &model, const tinygltf::Node &node, glm::mat4 matrix, std::map<int, GLuint> vbos) {
-
       //std::cout << "Drawing node " << node.name << std::endl;
       glm::mat4 t(1.0f);
       glm::mat4 r(1.0f);

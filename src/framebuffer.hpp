@@ -15,8 +15,8 @@ class FrameBuffer {
 
     FrameBuffer(Shader &shader, int s_w, int s_h): screenShader(shader) {
       screenShader = shader;
-      screen_width = 3400;
-      screen_height = 1440;
+      screen_width = 1920;
+      screen_height = 1200;
     }
 
     void setupFullScreenQuad() {
