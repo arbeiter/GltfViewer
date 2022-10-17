@@ -17,6 +17,7 @@ class Mesh {
     std::vector<Vertex> vertices;
     std::vector<GLuint> indices;
     Mesh(std::vector<Vertex>& vertices, std::vector<GLuint>& indices, std::string path);
+    Mesh();
     ~Mesh();
     void draw();
     Mesh createCubeMesh(const glm::vec3& dimensions);
@@ -26,6 +27,7 @@ class Mesh {
     GLuint VAO, VBO, EBO;
     void setupMesh();
     unsigned int texture_ = 0;
+    bool textureEnabled;
 };
 
 #endif

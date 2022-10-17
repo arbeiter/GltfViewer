@@ -2,10 +2,10 @@
 #define SHAPE_HPP
 
 class Shape {
-  Shape() {}
-};
-
-class Cube {
+  public:
+    Shape();
+    Mesh createCubeMesh(const glm::vec3& dimensions);
+    void setupShader();
 }
 
 #endif

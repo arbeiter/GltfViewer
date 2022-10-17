@@ -52,7 +52,11 @@ Mesh Shape::createCubeMesh(const glm::vec3& dimensions)
         mesh.indices.push_back(currIndex);
         currIndex += 4;
     }
+    mesh.setupMesh();
     return mesh;
+}
+
+void setupShader() {
 }
 
 Shape::Shape() {

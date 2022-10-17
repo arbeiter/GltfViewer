@@ -11,6 +11,7 @@
 #include "imgui.h"
 #include "custom_geometry.hpp"
 #include "framebuffer.hpp"
+#include "mesh.hpp"
 // TODO: Backends should be imgui/backends. Fix this
 #include "backends/imgui_impl_glfw.h"
 #include "backends/imgui_impl_opengl3.h"
@@ -182,6 +183,8 @@ void displayLoop(Window &window, std::string filename) {
     glm::mat4 view = quat_camera.getViewMatrix();
     Scene scene = Scene(ourShader, filename);
     CustomGeometry customGeometry = CustomGeometry();
+    Shape cube = Shape();
+    Mesh cubeMesh = createCubeMesh({10, 10, 10});
     glEnable(GL_DEPTH_TEST);
     glDepthFunc(GL_LESS);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
@@ -191,7 +194,8 @@ void displayLoop(Window &window, std::string filename) {
 
     Shader screenShader = setupScreenShader();
     if(isTest) {
-      //customGeometry.loadTestPlane();
+      customGeometry.loadTestPlane();
+      mesh.draw();
     } else {
       scene.loadModel(view, 1);
     }
@@ -213,13 +217,15 @@ void displayLoop(Window &window, std::string filename) {
         ourShader.use();
         if(isTest) {
           view = quat_camera.getViewMatrix();
-          customGeometry.renderCube(view);
+          customGeometry.drawTestPlane(view);
+          mesh.draw();
         } else {
           renderModel(scene, ourShader, view);
         }
 
         if(isFbEnabled)
           fb.clearAndRenderQuad();
+
         glfwSwapBuffers(window.window);
         glfwPollEvents();
     }
@@ -350,7 +356,7 @@ int main(int argc, char **argv)
   std::cout << "Take in path " << arg << std::endl;
   glfwInit();
   glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
-  glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 6);
+  glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 0);
   glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 #ifdef NDEBUG
   printf("Running in release mode\n");
