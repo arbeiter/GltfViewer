@@ -7,15 +7,19 @@ Mesh::~Mesh()
   glDeleteVertexArrays(1, &VAO);
 }
 
-Mesh::Mesh(std::vector<Vertex> &vertices, std::vector<GLuint> &indices, std::string path) {
-  textureEnabled = true;
-  std::string texture_file = path;
-  vertices = vertices;
-  indices = indices;
+Mesh::Mesh(const std::string& path)
+{
+  textureEnabled = false;
+  vertices = {};
+  indices = {};
+  texture_file = path;
 }
 
-Mesh::Mesh() {
-  textureEnabled = false;
+Mesh::Mesh(std::vector<Vertex> &vertices, std::vector<GLuint> &indices, const std::string& path) {
+  textureEnabled = true;
+  texture_file = path;
+  vertices = vertices;
+  indices = indices;
 }
 
 void Mesh::setupMesh() {
@@ -43,7 +47,21 @@ void Mesh::setupMesh() {
   glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (GLvoid*)offsetof(Vertex, TexCoords));
 
   if(textureEnabled)
-    texture_ = loadTexture(texture_file);
+    texture_ = loadTexture(texture_file.c_str());
+  glBindVertexArray(0);
+}
+
+// TODO: Move to base class
+void Mesh::draw(Shader& simpleShader, glm::mat4 &view) {
+  simpleShader.use();
+  glm::mat4 projection = glm::perspective(glm::radians(30.0f), (float)(1920/ 1200), 0.1f, 1000.0f);
+
+  glBindVertexArray(VAO);
+  simpleShader.setMat4("view", view);
+  simpleShader.setMat4("model", glm::mat4(1.0f));
+  simpleShader.setMat4("projection", projection);
+  glDrawElements(GL_TRIANGLES, indices.size(), GL_UNSIGNED_INT, nullptr);
+
   glBindVertexArray(0);
 }
 
@@ -57,4 +75,57 @@ void Mesh::draw() {
     glBindTexture(GL_TEXTURE_2D, texture_);
   glDrawElements(GL_TRIANGLES, indices.size(), GL_UNSIGNED_INT, nullptr);
   glBindVertexArray(0);
+}
+
+void Mesh::initCubeWithDimensions(const glm::vec3& dimensions) {
+  textureEnabled = true;
+  float w = dimensions.x;
+  float h = dimensions.y;
+  float d = dimensions.z;
+
+  // clang-format off
+  vertices = {
+      {{w, h, d}, {1.0f, 0.0f}, {0.0f, 0.0f, 1.0f}},
+      {{0, h, d}, {0.0f, 0.0f}, {0.0f, 0.0f, 1.0f}},
+      {{0, 0, d}, {0.0f, 1.0f}, {0.0f, 0.0f, 1.0f}},
+      {{w, 0, d}, {1.0f, 1.0f}, {0.0f, 0.0f, 1.0f}},
+
+      {{0, h, d}, {1.0f, 0.0f}, {-1.0f, 0.0f, 0.0f}},
+      {{0, h, 0}, {0.0f, 0.0f}, {-1.0f, 0.0f, 0.0f}},
+      {{0, 0, 0}, {0.0f, 1.0f}, {-1.0f, 0.0f, 0.0f}},
+      {{0, 0, d}, {1.0f, 1.0f}, {-1.0f, 0.0f, 0.0f}},
+
+      {{0, h, 0}, {1.0f, 0.0f}, {0.0f, 0.0f, -1.0f}},
+      {{w, h, 0}, {0.0f, 0.0f}, {0.0f, 0.0f, -1.0f}},
+      {{w, 0, 0}, {0.0f, 1.0f}, {0.0f, 0.0f, -1.0f}},
+      {{0, 0, 0}, {1.0f, 1.0f}, {0.0f, 0.0f, -1.0f}},
+
+      {{w, h, 0}, {1.0f, 0.0f}, {1.0f, 0.0f, 0.0f}},
+      {{w, h, d}, {0.0f, 0.0f}, {1.0f, 0.0f, 0.0f}},
+      {{w, 0, d}, {0.0f, 1.0f}, {1.0f, 0.0f, 0.0f}},
+      {{w, 0, 0}, {1.0f, 1.0f}, {1.0f, 0.0f, 0.0f}},
+
+      {{w, h, 0}, {1.0f, 0.0f}, {0.0f, 1.0f, 0.0f}},
+      {{0, h, 0}, {0.0f, 0.0f}, {0.0f, 1.0f, 0.0f}},
+      {{0, h, d}, {0.0f, 1.0f}, {0.0f, 1.0f, 0.0f}},
+      {{w, h, d}, {1.0f, 1.0f}, {0.0f, 1.0f, 0.0f}},
+
+      {{0, 0, 0}, {1.0f, 0.0f}, {0.0f, -1.0f, 0.0f}},
+      {{w, 0, 0}, {0.0f, 0.0f}, {0.0f, -1.0f, 0.0f}},
+      {{w, 0, d}, {0.0f, 1.0f}, {0.0f, -1.0f, 0.0f}},
+      {{0, 0, d}, {1.0f, 1.0f}, {0.0f, -1.0f, 0.0f}},
+  };
+  // clang-format on
+
+  int currIndex = 0;
+  for (int i = 0; i < 6; i++) {
+      indices.push_back(currIndex);
+      indices.push_back(currIndex + 1);
+      indices.push_back(currIndex + 2);
+      indices.push_back(currIndex + 2);
+      indices.push_back(currIndex + 3);
+      indices.push_back(currIndex);
+      currIndex += 4;
+  }
+  setupMesh();
 }

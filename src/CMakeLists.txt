@@ -12,7 +12,9 @@ add_executable(${PROJECT_NAME}
   framebuffer.hpp
   custom_geometry.hpp
   mesh.hpp
+  mesh.cpp
   texture.hpp
+  texture.cpp
   utils.hpp)
 
 find_package(glfw3 3.3 REQUIRED)

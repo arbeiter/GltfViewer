@@ -158,7 +158,6 @@ class CustomGeometry {
         glDrawArrays(GL_TRIANGLES, 0, 36);
         glBindVertexArray(0);
     }
-
 };
 
 #endif

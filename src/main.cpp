@@ -157,6 +157,11 @@ Shader setupScreenShader() {
   return screenShader;
 }
 
+Shader setupLightingShader() {
+  Shader lightingShader = Shader("shaders/light_source.shader.vs", "shaders/light_source.shader.fs");
+  return lightingShader;
+}
+
 void renderModel(Scene &scene, Shader &pbrShader, glm::mat4 &view) {
     view = quat_camera.getViewMatrix();
     scene.setWidthAndHeight(curr_width, curr_height);
@@ -183,8 +188,6 @@ void displayLoop(Window &window, std::string filename) {
     glm::mat4 view = quat_camera.getViewMatrix();
     Scene scene = Scene(ourShader, filename);
     CustomGeometry customGeometry = CustomGeometry();
-    Shape cube = Shape();
-    Mesh cubeMesh = createCubeMesh({10, 10, 10});
     glEnable(GL_DEPTH_TEST);
     glDepthFunc(GL_LESS);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
@@ -193,9 +196,12 @@ void displayLoop(Window &window, std::string filename) {
     float size = 1.0f;
 
     Shader screenShader = setupScreenShader();
+    Shader lightShader = setupLightingShader();
+    Mesh cubeMesh = Mesh("resources/textures/wood.png");
+    cubeMesh.initCubeWithDimensions({2, 2, 2});
+
     if(isTest) {
       customGeometry.loadTestPlane();
-      mesh.draw();
     } else {
       scene.loadModel(view, 1);
     }
@@ -218,7 +224,7 @@ void displayLoop(Window &window, std::string filename) {
         if(isTest) {
           view = quat_camera.getViewMatrix();
           customGeometry.drawTestPlane(view);
-          mesh.draw();
+          cubeMesh.draw(lightShader, view);
         } else {
           renderModel(scene, ourShader, view);
         }
