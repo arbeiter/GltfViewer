@@ -2,5 +2,5 @@ if [[ ! -d bin ]]; then
   exit
 fi
 cd bin
-cmake -DCMAKE_BUILD_TYPE=Release..; make
+cmake -DCMAKE_BUILD_TYPE=Debug ..; make
 ./bin/src/MinimalOpenGL 1

@@ -163,7 +163,6 @@ Shader setupLightingShader() {
 }
 
 void renderModel(Scene &scene, Shader &pbrShader, glm::mat4 &view) {
-    view = quat_camera.getViewMatrix();
     scene.setWidthAndHeight(curr_width, curr_height);
 
     int selectedModel = 1;
@@ -180,7 +179,7 @@ void renderModel(Scene &scene, Shader &pbrShader, glm::mat4 &view) {
 }
 
 void displayLoop(Window &window, std::string filename) {
-    bool isTest = true;
+    bool isTest = false;
     bool isFbEnabled = false;
     Shader ourShader("shaders/shader.vert", "shaders/pbr_shader_simplified.frag"); // you can name your shader files however you like
     Shader geometryShader("shaders/normal.vert", "shaders/normal.frag", "shaders/normal.gs");
@@ -198,11 +197,11 @@ void displayLoop(Window &window, std::string filename) {
     Shader screenShader = setupScreenShader();
     Shader lightShader = setupLightingShader();
     Mesh cubeMesh = Mesh("resources/textures/wood.png");
-    cubeMesh.initCubeWithDimensions({2, 2, 2});
 
     if(isTest) {
       customGeometry.loadTestPlane();
     } else {
+      cubeMesh.initCubeWithDimensions({2, 2, 2});
       scene.loadModel(view, 1);
     }
 
@@ -224,8 +223,16 @@ void displayLoop(Window &window, std::string filename) {
         if(isTest) {
           view = quat_camera.getViewMatrix();
           customGeometry.drawTestPlane(view);
-          cubeMesh.draw(lightShader, view);
+          glm::vec3 cubePos1 = {0,0,0};
+          glm::vec3 cubePos2 = {10,10,10};
+          cubeMesh.draw(lightShader, view, cubePos1);
+          cubeMesh.draw(lightShader, view, cubePos2);
         } else {
+          view = quat_camera.getViewMatrix();
+          glm::vec3 cubePos1 = {0,0,0};
+          glm::vec3 cubePos2 = {10,10,10};
+          cubeMesh.draw(lightShader, view, cubePos1);
+          cubeMesh.draw(lightShader, view, cubePos2);
           renderModel(scene, ourShader, view);
         }
 

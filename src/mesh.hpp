@@ -22,7 +22,7 @@ class Mesh {
     Mesh(const std::string& path);
     ~Mesh();
     void draw();
-    void draw(Shader& shader, glm::mat4& view);
+    void draw(Shader& shader, glm::mat4& view, glm::vec3 &pos);
     std::string texture_file;
     GLuint VAO, VBO, EBO;
     void setupMesh();

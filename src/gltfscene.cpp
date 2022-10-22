@@ -215,6 +215,23 @@ void Scene::loadTextures(tinygltf::Model &model) {
     }
 }
 
+
+void Scene::drawScene(glm::mat4 &viewParam) {
+  ourShader.use();
+  glm::vec3 v_position = glm::vec3(projection[3][0], projection[3][1], projection[3][2]);
+  ourShader.setVec3("light_pos", v_position);
+
+  setView(viewParam);
+  glm::mat4 model_mat(1.0f);
+  count = 0;
+  for (const tinygltf::Scene& scene : internalModel.scenes) {
+    for(size_t i = 0; i < scene.nodes.size(); i++) {
+      const tinygltf::Node &node = internalModel.nodes[scene.nodes[i]];
+      drawNode(internalModel, node, model_mat, vaoAndEbos.second);
+    }
+  }
+}
+
 void Scene::drawNode(tinygltf::Model &model, const tinygltf::Node &node, glm::mat4 matrix, std::map<int, GLuint> vbos) {
 
       //std::cout << "Drawing node " << node.name << std::endl;
@@ -259,13 +276,13 @@ void Scene::drawNode(tinygltf::Model &model, const tinygltf::Node &node, glm::ma
 
       if(node.mesh > -1) {
         tinygltf::Mesh &mesh = model.meshes[node.mesh];
-        //std::cout << "Drawing Mesh " << node.name << " " << mesh.name << " " << std::endl;
+        std::cout << "XIDC 279" << std::endl;
         drawMesh(mesh, model, gltf_mat, vbos);
       }
 }
 
 void Scene::drawMesh(tinygltf::Mesh &mesh, tinygltf::Model &model, glm::mat4 matrix, std::map<int, GLuint> vbos) {
-  //std::cout << "count " << count << std::endl;
+  std::cout << "Mesh count " << count << std::endl;
   count += 1;
   projection = glm::perspective(glm::radians(30.0f), (float)(width / height), 0.1f, 1000.0f);
 
@@ -305,14 +322,15 @@ void Scene::drawMesh(tinygltf::Mesh &mesh, tinygltf::Model &model, glm::mat4 mat
           if (attrib.first.compare("COLOR_0") == 0) vaa = 3;
           if (attrib.first.compare("TANGENT") == 0) vaa = 4;
           if(vaa > -1) {
+              glBindVertexArray(vaa);
               glEnableVertexAttribArray(vaa);
+              std::cout << "XIDC GLVERTEX " << std::endl;
               glVertexAttribPointer(vaa, size, accessor.componentType,
                                     accessor.normalized ? GL_TRUE : GL_FALSE,
                                     byteStride, BUFFER_OFFSET(accessor.byteOffset));
               gGLProgramState.attribs[attrib.first] = vaa;
           }
       }
-
 
       if(primitive.indices > -1) {
         //std::cout << "Mesh: Primitive not none" << std::endl;
@@ -348,10 +366,11 @@ void Scene::drawMesh(tinygltf::Mesh &mesh, tinygltf::Model &model, glm::mat4 mat
             setMaterials(mat, ourShader);
           }
           //std::cout << "Mesh: Index count " << indexAccessor.count << " " << indexAccessor.componentType << " " << std::endl;
+          std::cout << "XIDC DRAW" << std::endl;
           glDrawElements(mode, indexAccessor.count, indexAccessor.componentType, BUFFER_OFFSET(indexAccessor.byteOffset));
 
           // v3: glDrawElements(primitive.mode, indexAccessor.count, indexAccessor.componentType, reinterpret_cast<void*>(0 + indexAccessor.byteOffset));
-          //glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+          glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
         }
       }
   }
@@ -474,18 +493,3 @@ void Scene::setView(glm::mat4 &viewParam) {
   view = viewParam;
 }
 
-void Scene::drawScene(glm::mat4 &viewParam) {
-  ourShader.use();
-  glm::vec3 v_position = glm::vec3(projection[3][0], projection[3][1], projection[3][2]);
-  ourShader.setVec3("light_pos", v_position);
-
-  setView(viewParam);
-  glm::mat4 model_mat(1.0f);
-  count = 0;
-  for (const tinygltf::Scene& scene : internalModel.scenes) {
-    for(size_t i = 0; i < scene.nodes.size(); i++) {
-      const tinygltf::Node &node = internalModel.nodes[scene.nodes[i]];
-      drawNode(internalModel, node, model_mat, vaoAndEbos.second);
-    }
-  }
-}

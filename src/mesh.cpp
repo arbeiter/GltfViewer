@@ -37,7 +37,6 @@ void Mesh::setupMesh() {
   //vertices
   glEnableVertexAttribArray(0);
   glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (GLvoid*)0);
-
   // normals
   glEnableVertexAttribArray(1);
   glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (GLvoid*)offsetof(Vertex, Normal));
@@ -48,20 +47,20 @@ void Mesh::setupMesh() {
 
   if(textureEnabled)
     texture_ = loadTexture(texture_file.c_str());
-  glBindVertexArray(0);
 }
 
 // TODO: Move to base class
-void Mesh::draw(Shader& simpleShader, glm::mat4 &view) {
+void Mesh::draw(Shader& simpleShader, glm::mat4 &view, glm::vec3 &pos) {
   simpleShader.use();
-  glm::mat4 projection = glm::perspective(glm::radians(30.0f), (float)(1920/ 1200), 0.1f, 1000.0f);
+  glm::mat4 projection = glm::perspective(glm::radians(30.0f), (float)(3440/ 1440), 0.1f, 1000.0f);
 
   glBindVertexArray(VAO);
   simpleShader.setMat4("view", view);
-  simpleShader.setMat4("model", glm::mat4(1.0f));
+  glm::mat4 model = glm::mat4(1.0f);
+  model = glm::translate(model, pos);
+  simpleShader.setMat4("model", model);
   simpleShader.setMat4("projection", projection);
   glDrawElements(GL_TRIANGLES, indices.size(), GL_UNSIGNED_INT, nullptr);
-
   glBindVertexArray(0);
 }
 
@@ -70,7 +69,6 @@ void Mesh::draw() {
     glActiveTexture(GL_TEXTURE0);
 
   glBindVertexArray(VAO);
-
   if(textureEnabled)
     glBindTexture(GL_TEXTURE_2D, texture_);
   glDrawElements(GL_TRIANGLES, indices.size(), GL_UNSIGNED_INT, nullptr);
