@@ -1,6 +1,7 @@
 #include "gltfscene.h"
 #include <iostream>
 #define BUFFER_OFFSET(i) ((char *)NULL + (i))
+int o_count = 0;
 int count = 0;
 
 
@@ -101,8 +102,8 @@ void Scene::setShader(Shader &shader, glm::vec3 &position) {
 std::pair<GLuint, std::map<int, GLuint>> Scene::bindCrude(tinygltf::Model &model, Shader &ourShader) {
   GLuint vao;
   std::map<int, GLuint> vbos;
-  //glGenVertexArrays(1, &vao);
-  //glBindVertexArray(vao);
+  glGenVertexArrays(1, &vao);
+  glBindVertexArray(vao);
 
   const tinygltf::Scene &scene = model.scenes[model.defaultScene];
   for(size_t i = 0; i < scene.nodes.size(); ++i) {
@@ -168,14 +169,10 @@ void Scene::bindMesh(std::map<int, GLuint>& vbos, tinygltf::Model &model, tinygl
 
     const tinygltf::Buffer &buffer = model.buffers[bufferView.buffer];
     GLBufferState state;
-
     glGenBuffers(1, &state.vb);
     glBindBuffer(bufferView.target, state.vb);
-    glBufferData(bufferView.target, bufferView.byteLength,
-                 &buffer.data.at(0) + bufferView.byteOffset,
-                 GL_STATIC_DRAW);
+    glBufferData(bufferView.target, bufferView.byteLength, &buffer.data.at(0) + bufferView.byteOffset, GL_STATIC_DRAW);
     glBindBuffer(bufferView.target, 0);
-
     gBufferState[i] = state;
   }
 
@@ -228,6 +225,8 @@ void Scene::drawScene(glm::mat4 &viewParam) {
   ourShader.use();
   glm::vec3 v_position = glm::vec3(projection[3][0], projection[3][1], projection[3][2]);
   ourShader.setVec3("light_pos", v_position);
+  GLuint vao = vaoAndEbos.first;
+  glBindVertexArray(vao);
 
   setView(viewParam);
   glm::mat4 model_mat(1.0f);
@@ -238,6 +237,7 @@ void Scene::drawScene(glm::mat4 &viewParam) {
       drawNode(internalModel, node, model_mat, vaoAndEbos.second);
     }
   }
+  glBindVertexArray(0);
 }
 
 void Scene::drawNode(tinygltf::Model &model, const tinygltf::Node &node, glm::mat4 matrix, std::map<int, GLuint> vbos) {

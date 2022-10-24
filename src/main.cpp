@@ -183,7 +183,6 @@ void displayLoop(Window &window, std::string filename) {
     bool isFbEnabled = false;
     Shader ourShader("shaders/shader.vert", "shaders/pbr_shader_simplified.frag"); // you can name your shader files however you like
     Shader geometryShader("shaders/normal.vert", "shaders/normal.frag", "shaders/normal.gs");
-
     glm::mat4 view = quat_camera.getViewMatrix();
     Scene scene = Scene(ourShader, filename);
     CustomGeometry customGeometry = CustomGeometry();
@@ -201,8 +200,12 @@ void displayLoop(Window &window, std::string filename) {
     if(isTest) {
       customGeometry.loadTestPlane();
     } else {
-      cubeMesh.initCubeWithDimensions({2, 2, 2});
+
+      ourShader.use();
       scene.loadModel(view, 1, ourShader);
+
+      lightShader.use();
+      cubeMesh.initCubeWithDimensions({2, 2, 2});
     }
 
     FrameBuffer fb = FrameBuffer(screenShader, curr_width, curr_height);
@@ -219,7 +222,6 @@ void displayLoop(Window &window, std::string filename) {
         if(isFbEnabled)
           fb.renderToFramebuffer();
 
-        ourShader.use();
         if(isTest) {
           view = quat_camera.getViewMatrix();
           customGeometry.drawTestPlane(view);
@@ -230,8 +232,10 @@ void displayLoop(Window &window, std::string filename) {
         } else {
           view = quat_camera.getViewMatrix();
           glm::vec3 cubePos1 = {0,0,0};
-          //renderModel(scene, ourShader, view);
+          lightShader.use();
           cubeMesh.draw(lightShader, view, cubePos1);
+          ourShader.use();
+          renderModel(scene, ourShader, view);
         }
 
         if(isFbEnabled)
