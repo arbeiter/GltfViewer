@@ -1,18 +1,10 @@
 #include "gltfscene.h"
 #include <iostream>
 #define BUFFER_OFFSET(i) ((char *)NULL + (i))
+int o_count = 0;
 int count = 0;
 
-typedef struct {
-  GLuint vb;
-} GLBufferState;
 
-std::map<int, GLBufferState> gBufferState;
-typedef struct {
-  std::map<std::string, GLint> attribs;
-  std::map<std::string, GLint> uniforms;
-} GLProgramState;
-GLProgramState gGLProgramState;
 
 Scene::Scene(Shader &shader, std::string fileName): ourShader(shader) {
   filename = fileName;
@@ -81,7 +73,7 @@ void Scene::setWidthAndHeight(int w, int h) {
   height = h;
 }
 
-void Scene::loadModel(glm::mat4 &view, int elem) {
+void Scene::loadModel(glm::mat4 &view, int elem, Shader &shader) {
   tinygltf::Model model;
   elem = 16;
   std::string modelNumber = std::to_string(elem);
@@ -94,7 +86,7 @@ void Scene::loadModel(glm::mat4 &view, int elem) {
     return;
   }
 
-  vaoAndEbos = bindCrude(model);
+  vaoAndEbos = bindCrude(model, shader);
   internalModel = model;
 }
 
@@ -107,7 +99,7 @@ void Scene::setShader(Shader &shader, glm::vec3 &position) {
   shader.setVec3("light_pos", position);
 }
 
-std::pair<GLuint, std::map<int, GLuint>> Scene::bindCrude(tinygltf::Model &model) {
+std::pair<GLuint, std::map<int, GLuint>> Scene::bindCrude(tinygltf::Model &model, Shader &ourShader) {
   GLuint vao;
   std::map<int, GLuint> vbos;
   glGenVertexArrays(1, &vao);
@@ -118,6 +110,21 @@ std::pair<GLuint, std::map<int, GLuint>> Scene::bindCrude(tinygltf::Model &model
     tinygltf::Node &node = model.nodes[scene.nodes[i]];
     bindModelNodes(vbos, model, node);
   }
+
+  unsigned int progId = ourShader.ID;
+  ourShader.use();
+  GLint vtloc = glGetAttribLocation(progId, "aPos");
+  GLint nrmloc = glGetAttribLocation(progId, "a_normal");
+  GLint uvloc = glGetAttribLocation(progId, "tex_coord");
+  GLint tangent_loc = glGetAttribLocation(progId, "in_tangent");
+  // TODO: Why is this needed for sponza.gltf?
+  tangent_loc = 3;
+
+  gGLProgramState.attribs["POSITION"] = vtloc;
+  gGLProgramState.attribs["NORMAL"] = nrmloc;
+  gGLProgramState.attribs["TEXCOORD_0"] = uvloc;
+  std::cout << "TANGENT LOC " << tangent_loc << std::endl;
+  gGLProgramState.attribs["TANGENT"] = tangent_loc;
 
   return {vao, vbos};
 }
@@ -164,9 +171,7 @@ void Scene::bindMesh(std::map<int, GLuint>& vbos, tinygltf::Model &model, tinygl
     GLBufferState state;
     glGenBuffers(1, &state.vb);
     glBindBuffer(bufferView.target, state.vb);
-    glBufferData(bufferView.target, bufferView.byteLength,
-                 &buffer.data.at(0) + bufferView.byteOffset,
-                 GL_STATIC_DRAW);
+    glBufferData(bufferView.target, bufferView.byteLength, &buffer.data.at(0) + bufferView.byteOffset, GL_STATIC_DRAW);
     glBindBuffer(bufferView.target, 0);
     gBufferState[i] = state;
   }
@@ -215,6 +220,26 @@ void Scene::loadTextures(tinygltf::Model &model) {
     }
 }
 
+
+void Scene::drawScene(glm::mat4 &viewParam) {
+  ourShader.use();
+  glm::vec3 v_position = glm::vec3(projection[3][0], projection[3][1], projection[3][2]);
+  ourShader.setVec3("light_pos", v_position);
+  GLuint vao = vaoAndEbos.first;
+  glBindVertexArray(vao);
+
+  setView(viewParam);
+  glm::mat4 model_mat(1.0f);
+  count = 0;
+  for (const tinygltf::Scene& scene : internalModel.scenes) {
+    for(size_t i = 0; i < scene.nodes.size(); i++) {
+      const tinygltf::Node &node = internalModel.nodes[scene.nodes[i]];
+      drawNode(internalModel, node, model_mat, vaoAndEbos.second);
+    }
+  }
+  glBindVertexArray(0);
+}
+
 void Scene::drawNode(tinygltf::Model &model, const tinygltf::Node &node, glm::mat4 matrix, std::map<int, GLuint> vbos) {
       //std::cout << "Drawing node " << node.name << std::endl;
       glm::mat4 t(1.0f);
@@ -258,13 +283,13 @@ void Scene::drawNode(tinygltf::Model &model, const tinygltf::Node &node, glm::ma
 
       if(node.mesh > -1) {
         tinygltf::Mesh &mesh = model.meshes[node.mesh];
-        //std::cout << "Drawing Mesh " << node.name << " " << mesh.name << " " << std::endl;
+        std::cout << "XIDC 279" << std::endl;
         drawMesh(mesh, model, gltf_mat, vbos);
       }
 }
 
 void Scene::drawMesh(tinygltf::Mesh &mesh, tinygltf::Model &model, glm::mat4 matrix, std::map<int, GLuint> vbos) {
-  //std::cout << "count " << count << std::endl;
+  std::cout << "Mesh count " << count << std::endl;
   count += 1;
   projection = glm::perspective(glm::radians(30.0f), (float)(width / height), 0.1f, 1000.0f);
 
@@ -278,6 +303,7 @@ void Scene::drawMesh(tinygltf::Mesh &mesh, tinygltf::Model &model, glm::mat4 mat
   for (size_t i = 0; i < mesh.primitives.size(); ++i) {
       tinygltf::Primitive primitive = mesh.primitives[i];
       for (auto &attrib : primitive.attributes) {
+          std::cout << "Attrib " << attrib.second << " " << std::endl;
           tinygltf::Accessor accessor = model.accessors[attrib.second];
           glBindBuffer(GL_ARRAY_BUFFER, gBufferState[accessor.bufferView].vb);
 
@@ -301,17 +327,16 @@ void Scene::drawMesh(tinygltf::Mesh &mesh, tinygltf::Model &model, glm::mat4 mat
           if (attrib.first.compare("POSITION") == 0) vaa = 0;
           if (attrib.first.compare("NORMAL") == 0) vaa = 1;
           if (attrib.first.compare("TEXCOORD_0") == 0) vaa = 2;
-          if (attrib.first.compare("COLOR_0") == 0) vaa = 3;
-          if (attrib.first.compare("TANGENT") == 0) vaa = 4;
+          if (attrib.first.compare("TANGENT") == 0) vaa = 3;
           if(vaa > -1) {
-              glEnableVertexAttribArray(vaa);
-              glVertexAttribPointer(vaa, size, accessor.componentType,
-                                    accessor.normalized ? GL_TRUE : GL_FALSE,
-                                    byteStride, BUFFER_OFFSET(accessor.byteOffset));
-              gGLProgramState.attribs[attrib.first] = vaa;
+              std::cout << "XIDC GLVERTEX " << vaa << " " << std::endl;
+              glVertexAttribPointer(gGLProgramState.attribs[attrib.first], size, accessor.componentType, accessor.normalized ? GL_TRUE : GL_FALSE, byteStride, BUFFER_OFFSET(accessor.byteOffset));
+              std::cout << "XIDC GLVERTEX After vertex attrib" << vaa << " " << std::endl;
+              glEnableVertexAttribArray(gGLProgramState.attribs[attrib.first]);
+              // gGLProgramState.attribs[attrib.first] = vaa;
+              std::cout << "XIDC 332 AFTER glEnable" << vaa << " " << std::endl;
           }
       }
-
 
       if(primitive.indices > -1) {
         //std::cout << "Mesh: Primitive not none" << std::endl;
@@ -347,10 +372,11 @@ void Scene::drawMesh(tinygltf::Mesh &mesh, tinygltf::Model &model, glm::mat4 mat
             setMaterials(mat, ourShader);
           }
           //std::cout << "Mesh: Index count " << indexAccessor.count << " " << indexAccessor.componentType << " " << std::endl;
+          std::cout << "XIDC DRAW" << std::endl;
           glDrawElements(mode, indexAccessor.count, indexAccessor.componentType, BUFFER_OFFSET(indexAccessor.byteOffset));
 
           // v3: glDrawElements(primitive.mode, indexAccessor.count, indexAccessor.componentType, reinterpret_cast<void*>(0 + indexAccessor.byteOffset));
-          //glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+          glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
         }
       }
   }
@@ -359,10 +385,8 @@ void Scene::drawMesh(tinygltf::Mesh &mesh, tinygltf::Model &model, glm::mat4 mat
   glDisableVertexAttribArray(1);
   glDisableVertexAttribArray(2);
   glDisableVertexAttribArray(3);
-  glDisableVertexAttribArray(4);
   //std::cout << "End render" << std::endl;
 
-  /*
   {
     for (size_t i = 0; i < mesh.primitives.size(); ++i) {
         tinygltf::Primitive primitive = mesh.primitives[i];
@@ -371,15 +395,13 @@ void Scene::drawMesh(tinygltf::Mesh &mesh, tinygltf::Model &model, glm::mat4 mat
           if (attrib.first.compare("POSITION") == 0) vaa = 0;
           if (attrib.first.compare("NORMAL") == 0) vaa = 1;
           if (attrib.first.compare("TEXCOORD_0") == 0) vaa = 2;
-          if (attrib.first.compare("COLOR_0") == 0) vaa = 3;
-          if (attrib.first.compare("TANGENT") == 0) vaa = 4;
+          if (attrib.first.compare("TANGENT") == 0) vaa = 3;
           if(vaa >= 0) {
             glDisableVertexAttribArray(gGLProgramState.attribs[attrib.first]);
           }
         }
       }
   }
-  */
   //glActiveTexture(GL_TEXTURE0);
 }
 
@@ -473,18 +495,3 @@ void Scene::setView(glm::mat4 &viewParam) {
   view = viewParam;
 }
 
-void Scene::drawScene(glm::mat4 &viewParam) {
-  ourShader.use();
-  glm::vec3 v_position = glm::vec3(projection[3][0], projection[3][1], projection[3][2]);
-  ourShader.setVec3("light_pos", v_position);
-
-  setView(viewParam);
-  glm::mat4 model_mat(1.0f);
-  count = 0;
-  for (const tinygltf::Scene& scene : internalModel.scenes) {
-    for(size_t i = 0; i < scene.nodes.size(); i++) {
-      const tinygltf::Node &node = internalModel.nodes[scene.nodes[i]];
-      drawNode(internalModel, node, model_mat, vaoAndEbos.second);
-    }
-  }
-}

@@ -9,8 +9,9 @@
 #include "camera.h"
 #include "gltfscene.h"
 #include "imgui.h"
-#include "framebuffer.hpp"
 #include "custom_geometry.hpp"
+#include "framebuffer.hpp"
+#include "mesh.hpp"
 // TODO: Backends should be imgui/backends. Fix this
 #include "backends/imgui_impl_glfw.h"
 #include "backends/imgui_impl_opengl3.h"
@@ -156,8 +157,12 @@ Shader setupScreenShader() {
   return screenShader;
 }
 
+Shader setupLightingShader() {
+  Shader lightingShader = Shader("shaders/light_source.shader.vs", "shaders/light_source.shader.fs");
+  return lightingShader;
+}
+
 void renderModel(Scene &scene, Shader &pbrShader, glm::mat4 &view) {
-    view = quat_camera.getViewMatrix();
     scene.setWidthAndHeight(curr_width, curr_height);
 
     int selectedModel = 1;
@@ -165,7 +170,7 @@ void renderModel(Scene &scene, Shader &pbrShader, glm::mat4 &view) {
     if(currentModel != selectedModel) {
       selectedModel = currentModel;
       std::cout << " Loading selected Model " << selectedModel << " " << currentModel << std::endl;
-      scene.loadModel(view, selectedModel);
+      scene.loadModel(view, selectedModel, pbrShader);
     }
     pbrShader.use();
     scene.setShader(pbrShader, quat_camera.Position);
@@ -178,7 +183,6 @@ void displayLoop(Window &window, std::string filename) {
     bool isFbEnabled = false;
     Shader ourShader("shaders/shader.vert", "shaders/pbr_shader_simplified.frag"); // you can name your shader files however you like
     Shader geometryShader("shaders/normal.vert", "shaders/normal.frag", "shaders/normal.gs");
-
     glm::mat4 view = quat_camera.getViewMatrix();
     Scene scene = Scene(ourShader, filename);
     CustomGeometry customGeometry = CustomGeometry();
@@ -190,10 +194,18 @@ void displayLoop(Window &window, std::string filename) {
     float size = 1.0f;
 
     Shader screenShader = setupScreenShader();
+    Shader lightShader = setupLightingShader();
+    Mesh cubeMesh = Mesh("resources/textures/wood.png");
+
     if(isTest) {
-      //customGeometry.loadTestPlane();
+      customGeometry.loadTestPlane();
     } else {
-      scene.loadModel(view, 1);
+
+      ourShader.use();
+      scene.loadModel(view, 1, ourShader);
+
+      lightShader.use();
+      cubeMesh.initCubeWithDimensions({2, 2, 2});
     }
 
     FrameBuffer fb = FrameBuffer(screenShader, curr_width, curr_height);
@@ -210,16 +222,25 @@ void displayLoop(Window &window, std::string filename) {
         if(isFbEnabled)
           fb.renderToFramebuffer();
 
-        ourShader.use();
         if(isTest) {
           view = quat_camera.getViewMatrix();
-          customGeometry.renderCube(view);
+          customGeometry.drawTestPlane(view);
+          glm::vec3 cubePos1 = {0,0,0};
+          glm::vec3 cubePos2 = {10,10,10};
+          cubeMesh.draw(lightShader, view, cubePos1);
+          cubeMesh.draw(lightShader, view, cubePos2);
         } else {
+          view = quat_camera.getViewMatrix();
+          glm::vec3 cubePos1 = {0,0,0};
+          lightShader.use();
+          cubeMesh.draw(lightShader, view, cubePos1);
+          ourShader.use();
           renderModel(scene, ourShader, view);
         }
 
         if(isFbEnabled)
           fb.clearAndRenderQuad();
+
         glfwSwapBuffers(window.window);
         glfwPollEvents();
     }
@@ -350,7 +371,7 @@ int main(int argc, char **argv)
   std::cout << "Take in path " << arg << std::endl;
   glfwInit();
   glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
-  glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 6);
+  glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 0);
   glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 #ifdef NDEBUG
   printf("Running in release mode\n");

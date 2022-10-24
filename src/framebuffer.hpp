@@ -1,3 +1,5 @@
+#ifndef FB_HPP
+#define FB_HPP
 #include <iostream>
 #include <glad/gl.h>
 #include <shader.h>
@@ -94,3 +96,4 @@ class FrameBuffer {
       glEnable(GL_DEPTH_TEST); // enable depth testing (is disabled for rendering screen-space quad)
     }
 };
+#endif
