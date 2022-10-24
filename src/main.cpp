@@ -180,7 +180,7 @@ void renderModel(Scene &scene, Shader &pbrShader, glm::mat4 &view) {
 
 void displayLoop(Window &window, std::string filename) {
     bool isTest = false;
-    bool isFbEnabled = false;
+    bool isFbEnabled = true;
     Shader ourShader("shaders/shader.vert", "shaders/pbr_shader_simplified.frag"); // you can name your shader files however you like
     Shader geometryShader("shaders/normal.vert", "shaders/normal.frag", "shaders/normal.gs");
     glm::mat4 view = quat_camera.getViewMatrix();
