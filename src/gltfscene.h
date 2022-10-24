@@ -32,15 +32,25 @@ class Scene
       std::vector<GLuint> allTextures;
       bool loadGltf(tinygltf::Model &model, const char* filename);
 
+      typedef struct {
+        GLuint vb;
+      } GLBufferState;
+      std::map<int, GLBufferState> gBufferState;
+      typedef struct {
+        std::map<std::string, GLint> attribs;
+        std::map<std::string, GLint> uniforms;
+      } GLProgramState;
+      GLProgramState gGLProgramState;
+
   public:
       glm::mat4 projection;
       Shader ourShader;
 
       Scene(Shader &ourShader, std::string resourcePath);
-      void loadModel(glm::mat4 &view, int modelNumber);
+      void loadModel(glm::mat4 &view, int modelNumber, Shader &shader);
       void dbgModel(tinygltf::Model &model);
       void loadTextures(tinygltf::Model &model);
-      std::pair<GLuint, std::map<int, GLuint>> bindCrude(tinygltf::Model &model);
+      std::pair<GLuint, std::map<int, GLuint>> bindCrude(tinygltf::Model &model, Shader &shader);
 
       std::string getexepath();
       void bindModelNodes(std::map<int, GLuint>& vbos, tinygltf::Model &model, tinygltf::Node &node);

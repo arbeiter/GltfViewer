@@ -170,7 +170,7 @@ void renderModel(Scene &scene, Shader &pbrShader, glm::mat4 &view) {
     if(currentModel != selectedModel) {
       selectedModel = currentModel;
       std::cout << " Loading selected Model " << selectedModel << " " << currentModel << std::endl;
-      scene.loadModel(view, selectedModel);
+      scene.loadModel(view, selectedModel, pbrShader);
     }
     pbrShader.use();
     scene.setShader(pbrShader, quat_camera.Position);
@@ -202,7 +202,7 @@ void displayLoop(Window &window, std::string filename) {
       customGeometry.loadTestPlane();
     } else {
       cubeMesh.initCubeWithDimensions({2, 2, 2});
-      scene.loadModel(view, 1);
+      scene.loadModel(view, 1, ourShader);
     }
 
     FrameBuffer fb = FrameBuffer(screenShader, curr_width, curr_height);
@@ -230,10 +230,8 @@ void displayLoop(Window &window, std::string filename) {
         } else {
           view = quat_camera.getViewMatrix();
           glm::vec3 cubePos1 = {0,0,0};
-          glm::vec3 cubePos2 = {10,10,10};
+          //renderModel(scene, ourShader, view);
           cubeMesh.draw(lightShader, view, cubePos1);
-          cubeMesh.draw(lightShader, view, cubePos2);
-          renderModel(scene, ourShader, view);
         }
 
         if(isFbEnabled)
