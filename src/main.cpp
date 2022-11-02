@@ -382,6 +382,7 @@ int main(int argc, char **argv)
 
   Window window = Window(800, 600, "TinyGLTF basic example");
   glfwMakeContextCurrent(window.window);
+  glfwSwapInterval(0);
   glfwSetCursorPosCallback(window.window, mouse_callback);
   glfwSetScrollCallback(window.window, scroll_callback);
   glfwSetWindowSizeCallback(window.window, glfwSetWindowSizeCallback);

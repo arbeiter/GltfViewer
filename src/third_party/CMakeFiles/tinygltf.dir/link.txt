@@ -1,0 +1,2 @@
+/usr/bin/ar qc libtinygltf.a CMakeFiles/tinygltf.dir/tinygltf/tiny_gltf.cpp.o
+/usr/bin/ranlib libtinygltf.a

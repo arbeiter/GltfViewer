@@ -283,7 +283,6 @@ void Scene::drawNode(tinygltf::Model &model, const tinygltf::Node &node, glm::ma
 
       if(node.mesh > -1) {
         tinygltf::Mesh &mesh = model.meshes[node.mesh];
-        std::cout << "XIDC 279" << std::endl;
         drawMesh(mesh, model, gltf_mat, vbos);
       }
 }
@@ -329,12 +328,9 @@ void Scene::drawMesh(tinygltf::Mesh &mesh, tinygltf::Model &model, glm::mat4 mat
           if (attrib.first.compare("TEXCOORD_0") == 0) vaa = 2;
           if (attrib.first.compare("TANGENT") == 0) vaa = 3;
           if(vaa > -1) {
-              std::cout << "XIDC GLVERTEX " << vaa << " " << std::endl;
               glVertexAttribPointer(gGLProgramState.attribs[attrib.first], size, accessor.componentType, accessor.normalized ? GL_TRUE : GL_FALSE, byteStride, BUFFER_OFFSET(accessor.byteOffset));
-              std::cout << "XIDC GLVERTEX After vertex attrib" << vaa << " " << std::endl;
               glEnableVertexAttribArray(gGLProgramState.attribs[attrib.first]);
               // gGLProgramState.attribs[attrib.first] = vaa;
-              std::cout << "XIDC 332 AFTER glEnable" << vaa << " " << std::endl;
           }
       }
 
@@ -372,7 +368,6 @@ void Scene::drawMesh(tinygltf::Mesh &mesh, tinygltf::Model &model, glm::mat4 mat
             setMaterials(mat, ourShader);
           }
           //std::cout << "Mesh: Index count " << indexAccessor.count << " " << indexAccessor.componentType << " " << std::endl;
-          std::cout << "XIDC DRAW" << std::endl;
           glDrawElements(mode, indexAccessor.count, indexAccessor.componentType, BUFFER_OFFSET(indexAccessor.byteOffset));
 
           // v3: glDrawElements(primitive.mode, indexAccessor.count, indexAccessor.componentType, reinterpret_cast<void*>(0 + indexAccessor.byteOffset));

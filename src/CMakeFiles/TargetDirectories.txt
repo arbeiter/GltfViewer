@@ -1,0 +1,11 @@
+/home/pulo/code/GltfViewer/src/CMakeFiles/edit_cache.dir
+/home/pulo/code/GltfViewer/src/CMakeFiles/rebuild_cache.dir
+/home/pulo/code/GltfViewer/src/third_party/CMakeFiles/tinygltf.dir
+/home/pulo/code/GltfViewer/src/third_party/CMakeFiles/edit_cache.dir
+/home/pulo/code/GltfViewer/src/third_party/CMakeFiles/rebuild_cache.dir
+/home/pulo/code/GltfViewer/src/third_party/glad/CMakeFiles/glad.dir
+/home/pulo/code/GltfViewer/src/third_party/glad/CMakeFiles/edit_cache.dir
+/home/pulo/code/GltfViewer/src/third_party/glad/CMakeFiles/rebuild_cache.dir
+/home/pulo/code/GltfViewer/src/src/CMakeFiles/MinimalOpenGL.dir
+/home/pulo/code/GltfViewer/src/src/CMakeFiles/edit_cache.dir
+/home/pulo/code/GltfViewer/src/src/CMakeFiles/rebuild_cache.dir
